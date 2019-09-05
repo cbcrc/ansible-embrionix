@@ -1,0 +1,15 @@
+emsfp_modules:
+{% set id = csvfile.split("\n") %}
+{% set id = id[0].split(",") %}
+{% for item in csvfile.split("\n") %}
+{%   if loop.index != 1 %}
+{%     set values = item.split(",") %}
+{% for x in id %}
+{% if x == id[0] %}
+  - '{{ x|lower |trim() }}': '{{ values[loop.index - 1 ]|trim() }}'
+{% else %}
+    '{{ x|lower |trim() }}': '{{ values[loop.index - 1 ]|trim() }}'
+{% endif %}
+{% endfor %}
+{% endif %}
+{% endfor %}

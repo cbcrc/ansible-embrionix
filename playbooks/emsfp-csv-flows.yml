@@ -1,0 +1,90 @@
+# Playbook emsfp-csv-flows.yml
+#
+# Description
+#   Le playbook emsfp put flow vise à pousser les configurations de flows des modules emsfp. Le playbook utilise les valeurs
+#   provenant d'un csv.
+#   Ce playbook est légerement différent des playbook **sfp-(...)** en quelques points :
+#     - Il y a une validation de trois champs mandatoire, soit "Target" (Adresse IP du module emsfp), "Flow" (Flow ID du flow) et 
+#       "FlowType" (enc_video, enc_audio, enc_ancillary, dec_video, dec_audio, dec_ancillary).
+#     - Il s'addresse aux modules de type Encapsulateur et Decapsulateur. Pour ces deux types de modules, les valeurs assignées au
+#       flow dans le csv doivent correspondre soit à un flow video, audio ou ancilliary.
+#     - Une addresse MAC est généré à partir de l'adresse IP "dst_ip_addr" selon un script fournie par emsfp. Cette valeur est
+#       assigné au champs dst_mac du payload envoyé au module.
+#
+# Format csv:
+#   Target,FlowType,Flow,label,name,src_ip_addr,src_udp_port,dst_ip_addr,dst_udp_port,dst_mac,vlan_tag,ssrc,rtp_pt,dscp,enable,aud_chan_map,aud_ptime_idx,anc_flow_profile
+#
+# Utilisation
+#
+#   Ce playbook puise les valeurs à configurer dans un csv comportant les colonnes suivantes:
+#     "Target,FlowType,Flow,label,name,src_ip_addr,src_udp_port,dst_ip_addr,dst_udp_port,dst_mac,vlan_tag,ssrc,rtp_pt,dscp,
+#      enable,aud_chan_map,aud_ptime_idx,anc_flow_profile"
+#
+#   Le csv contenant les valeurs à programmer doit être (par défaut) déposé à l'endroit suivant: "csv/config-file.csv".
+#   Le playbook peut ensuite être exécuté avec la commande suivante:
+#     `ansible-playbook [nom du playbook] -i inventaire/[chemin du fichier d'inventaire] -l [machine ou groupe cible] -v`
+#
+# Copyright: (c) 2018, Société Radio-Canada>
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+#
+---
+- hosts: localhost
+  gather_facts: no
+  vars:
+    var_file: "csv/config-file.csv" # csv contenant les valeurs à configurer
+
+  tasks:
+  - name: Parse CSV to YML.
+    template:
+      src: "templates/csv_to_yaml_flows.j2"
+      dest: "vars/values_from_csv_flows_payload.yml"
+    vars: 
+      - csvfile: "{{ lookup('file', '{{ var_file }}') }}"
+      - ansible_python_interpreter: /usr/bin/python
+    run_once: true
+    check_mode: no
+    changed_when: no
+
+  - name: Get Modules configuration from the generated YML file.
+    include_vars: values_from_csv_flows_payload.yml
+
+  - name: Generate a MAC multicast based on the dst_ip_addr.
+    emsfp_gen_multicast_mac:
+      Target: "{{ modules[item|int]['Target'] }}"
+      Flow: "{{ modules[item|int]['Flow'] }}"
+      dst_ip_addr: "{{ modules[item|int]['dst_ip_addr'] }}"
+    loop: "{{ range(0, modules | length)|list }}"
+    register: generated_multicast_MAC_list
+
+  - name: Send Put request via emsfp_put_flows
+    emsfp_flows:
+      Target: "{{ modules[item|int]['Target'] | default(None) }}"
+      FlowType: "{{ modules[item|int]['FlowType'] | default(None) }}"
+      Flow: "{{ modules[item|int]['Flow'] | default(None) }}"
+      aud_chan_cnt: "{{ modules[item|int]['aud_chan_cnt'] | default(None) }}"
+      aud_chan_map: "{{ modules[item|int]['aud_chan_map'] | default(None) }}"
+      anc_flow_profile: "{{ modules[item|int]['anc_flow_profile'] | default(None) }}"
+      aud_ptime_idx: "{{ modules[item|int]['aud_ptime_idx'] | default(None) }}"      
+      dscp: "{{ modules[item|int]['dscp'] | default(None) }}"
+      dst_ip_addr: "{{ modules[item|int]['dst_ip_addr'] | default(None) }}"
+      dst_mac: "{{ generated_multicast_MAC_list.results[item|int]['generated_dest_multicast_mac'] | default(None) }}"
+      dst_udp_port: "{{ modules[item|int]['dst_udp_port'] | default(None) }}"
+      enable: "{{ modules[item|int]['enable'] | default(None) }}"
+      igmp_src_ip: "{{ modules[item|int]['igmp_src_ip'] | default(None) }}"
+      label: "{{ modules[item|int]['label'] | default(None) }}"
+      name: "{{ modules[item|int]['name'] | default(None) }}"
+      pkt_filter_dst_ip: "{{ modules[item|int]['pkt_filter_dst_ip'] | default(None) }}"
+      pkt_filter_dst_udp: "{{ modules[item|int]['pkt_filter_dst_mac'] | default(None) }}"
+      pkt_filter_dst_mac: "{{ modules[item|int]['pkt_filter_vlan'] | default(None) }}"
+      pkt_filter_src_ip: "{{ modules[item|int]['pkt_filter_src_ip'] | default(None) }}"
+      pkt_filter_src_udp: "{{ modules[item|int]['pkt_filter_src_udp'] | default(None) }}"
+      pkt_filter_src_mac: "{{ modules[item|int]['pkt_filter_src_mac'] | default(None) }}"
+      pkt_filter_ssrc: "{{ modules[item|int]['pkt_filter_ssrc'] | default(None) }}"
+      pkt_filter_vlan: "{{ modules[item|int]['pkt_filter_ssrc'] | default(None) }}"
+      rtp_pt: "{{ modules[item|int]['rtp_pt'] | default(None) }}"
+      sender_type: "{{ modules[item|int]['sender_type'] | default(None) }}"
+      src_ip_addr: "{{ modules[item|int]['src_ip_addr'] | default(None) }}"
+      src_udp_port: "{{ modules[item|int]['src_udp_port'] | default(None) }}"
+      ssrc: "{{ modules[item|int]['ssrc'] | default(None) }}"
+      vlan_tag: "{{ modules[item|int]['vlan_tag'] | default(None) }}"
+    loop: "{{ range(0, modules | length)|list }}"

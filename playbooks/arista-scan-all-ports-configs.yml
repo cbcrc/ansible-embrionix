@@ -1,0 +1,97 @@
+# Playbook arista-scan-all-ports-configs.yml
+#
+# Description
+#   Ce playbook sert à faire un scan des ports ethernet d'une switch arista.
+#   Configuration des addresses réseaux des cartes Embrionix par I2C. (Addresse IP, le masque réseau et la passerelle par défault).
+#
+#   Pour ce faire, on établit une connection ssh avec la switch arista dans laquelle se trouve les modules emsfp d'Embrionix via le
+#   module ansible eos_command pour ensuite lire la MAC, l'adresse IP, le masque reseau et la passerelle réseau. Ensuite, on affiche
+#   toute les configurations associées par port ethernet dans l'ordre.
+#
+# Utilisation
+#   Le playbook peut être exécuté avec la commande suivante:
+# 
+#     `ansible-playbook [nom du playbook] -i inventaire/[chemin du fichier d'inventaire] -l [machine ou groupe cible] -v`
+#
+# Copyright: (c) 2018, Société Radio-Canada>
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+#
+---
+- hosts: localhost
+  gather_facts: no
+
+  tasks: 
+    - name: Gather smbus show command result
+      eos_command:    
+        host: '{{ arista_ip }}'
+        username: '{{ arista_user }}' 
+        password: '{{ arista_pass }}'
+        use_ssl: true
+        commands: 
+          - enable
+          - show platform smbus counters | sed '/Est. Tx/ q' | grep -B 1 '5.00'
+      register: smbusses
+
+    - name: Filter smbus return to create a dict of corresponding Ethernet port and SMBUS Adress.
+      smbus_to_array:
+        smbus: '{{ smbusses.stdout[1] }}'
+      register: port_smbus_dict
+
+    - name: Read the MAC on all module in the switch via the smbus.
+      eos_command:
+        host: '{{ arista_ip }}'
+        username: '{{ arista_user }}'  
+        password: '{{ arista_pass }}'
+        use_ssl: true
+        commands:
+          - enable
+          - bash
+          # Set the page 0x84 dans le registre 127 pour acceder a la MAC et au IP
+          - smbus writes /scd/{{ item.value }} 127 0x84
+          # Read 6 consecutive bytes from the register 133 (133-138) containing MAC address.
+          - smbus reads /scd/{{ item.value }} 133 6
+      register: mac_reads_hex
+      loop: "{{ port_smbus_dict.msg | dict2items }}"
+      no_log: True
+
+    - name: Read the network addresses on all module in the switch via the smbus.
+      eos_command:
+        host: '{{ arista_ip }}'
+        username: '{{ arista_user }}' 
+        password: '{{ arista_pass }}'
+        use_ssl: true
+        commands:
+          - enable
+          - bash
+          # Set the page 0x84 dans le registre 127 pour acceder a la MAC et au IP
+          - smbus writes /scd/{{ item.value }} 127 0x84
+          # Read 4 consecutive bytes from the register 151 (151-154) containing IP address.
+          - smbus reads /scd/{{ item.value }} 151 12
+      register: "ips_reads_hex"
+      loop: "{{ port_smbus_dict.msg | dict2items }}"
+      no_log: True
+
+      #The stdout index is based on the command line used in the eos_command task. In this case, the read in on the line 4 and the index equal 3.
+    - name: Convert the network addresses read on ther module from hex to dec.
+      convert_network_address:
+        ip_addr: "{{ ips_reads_hex.results[item|int].stdout[3][0:11] }}"
+        subnet_mask: "{{ ips_reads_hex.results[item|int].stdout[3][12:23] }}"
+        gateway: "{{ ips_reads_hex.results[item|int].stdout[3][24:35] }}"
+        convert_to: "dec"
+      loop: "{{ range(ips_reads_hex.results | length)|list }}"
+      register : ips_reads_dec
+
+      #The stdout index is based on the command line used in the eos_command task. In this case, the read in on the line 4 and the index equal 3.
+    - name: Build a list with Networks addresses and MACs assign to each Embrionix module.
+      debug:
+        msg:
+          Module Configuration:
+            Address Ethernet Port: "{{ item.key }}"
+            Address SMBus: "{{ item.value }}"
+            MAC Address:  "{{ mac_reads_hex.results[index|int].stdout[3] }}"
+            IP Address: "{{ ips_reads_dec.results[index|int].msg.converted_value.ip_addr }}"
+            Subnetmask: "{{ ips_reads_dec.results[index|int].msg.converted_value.subnet_mask }}"
+            default_gateway: "{{  ips_reads_dec.results[index|int].msg.converted_value.gateway }}"
+      loop: "{{ lookup('dict', port_smbus_dict.msg) }}"
+      loop_control:
+        index_var: index

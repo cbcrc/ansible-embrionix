@@ -1,0 +1,25 @@
+modules:
+{% set ns = namespace(real_index_field=0,flag_first_empty_field=false) %}
+{% set id = csvfile.split("\n") %}
+{% set id = id[0].split(",") %}
+{% for field in id %}
+{% if ((ns.flag_first_empty_field == false) and (field == '')) %}
+{%   set ns.flag_first_empty_field = true %}
+{%   set ns.real_index_field = loop.index -1 %}
+{% endif %}
+{% endfor %}
+{% if (ns.flag_first_empty_field == false) %}
+{%   set ns.real_index_field = id | length  %}
+{% endif %}
+{% for item in csvfile.split("\n") %}
+{%   if loop.index != 1 %}
+{%     set values = item.split(",")[0:ns.real_index_field] %}
+{% for x in id[0:ns.real_index_field] %}
+{%   if x == id[0] %}
+  - '{{ x|trim() }}': '{{ values[loop.index - 1 ]|trim() }}'
+{% else %}
+    '{{ x|trim() }}': '{{ values[loop.index - 1 ]|trim() }}'
+{% endif %}
+{% endfor %}
+{% endif %}
+{% endfor %}

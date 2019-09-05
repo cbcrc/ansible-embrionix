@@ -1,0 +1,41 @@
+# Valid csv columns:
+#   ip_addr,subnet_mask,gateway,hostname,port,dhcp_enable,alias_ip,alias_ip_subnet,ctl_vlan_id,ctl_vlan_pcp,ctl_vlan_enable
+#
+# Copyright: (c) 2018, Société Radio-Canada>
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+#
+---
+- hosts: localhost
+  gather_facts: no
+  vars:
+    - var_file: "csv/config-file.csv"
+    - ansible_python_interpreter: "{{ lookup('env','VIRTUAL_ENV') }}/bin/python"
+
+  tasks:
+    - name: Conversion CSV vers YML.
+      template:
+        src: "templates/csv_to_yaml.j2"
+        dest: "vars/ipconfigs_payload.yml"
+        force: yes
+      vars: 
+        - csvfile: "{{ lookup('file', '{{ var_file }}') }}"
+        - ansible_python_interpreter: /usr/bin/env python
+      run_once: true
+      check_mode: no
+      changed_when: no
+
+    - name: Get Modules configuration from the generated YML file.
+      include_vars: ipconfigs_payload.yml
+      check_mode: no
+      changed_when: no
+
+    # - debug:
+    #     msg: "{{ modules_ipconfig_payload }}"
+
+    - name: Pousser la configuration
+      emsfp_ipconfig:
+        ip_addr: "{{ item.ip_addr }}"
+        hostname: "{{ item.hostname }}"
+        dhcp_enable: "{{ item.dhcp_enable }}"
+        ctl_vlan_id: "{{ item.ctl_vlan_id }}"
+      loop: "{{ modules }}"

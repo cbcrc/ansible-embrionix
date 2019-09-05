@@ -1,0 +1,61 @@
+# Copyright: (c) 2018, Société Radio-Canada>
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+#
+---
+- hosts: all
+  gather_facts: no
+  vars_files:
+    - ../common_vars/all/all.yml
+  vars:
+    - ansible_python_interpreter: "/usr/bin/env python"
+
+  tasks:
+    - name: Copy host vars of host to host_vars folder of inventory for "{{ hostvars[inventory_hostname].ansible_host_ip }}"
+      copy:
+        src: "vars/values_read_from_module_{{ hostvars[inventory_hostname].ansible_host_ip }}.yml"
+        dest: "{{ inventory_dir }}/host_vars/{{ hostvars[inventory_hostname].inventory_hostname }}.yml"
+      delegate_to: localhost 
+      register: ansible_host_result
+      ignore_errors: True
+    
+    - name: Make sure last-good-configuration path exists
+      file: 
+        path: "{{ inventory_dir }}/last-good-configuration/"
+        state: directory
+        recurse: yes
+      delegate_to: localhost 
+    
+    - name: Copy host vars of host to last-good-configuration folder of inventory for "{{ hostvars[inventory_hostname].ansible_host_ip }}"
+      copy:
+        src: "vars/values_read_from_module_{{ hostvars[inventory_hostname].ansible_host_ip }}.yml"
+        dest: "{{ inventory_dir }}/last-good-configuration/{{ hostvars[inventory_hostname].inventory_hostname }}.yml"
+      delegate_to: localhost 
+      register: ansible_host_result
+      ignore_errors: True
+
+    # - name: ansible host test
+    #   fail:
+    #     msg: "failed"
+    #   failed_when: "'ansible_host' not in ansible_host_result.msg"
+
+    # - name: Copy host vars of host to host_vars folder of inventory for "{{ hostvars[inventory_hostname].ansible_host_ip }}"
+    #   copy:
+    #     src: "vars/values_read_from_module_{{ hostvars[inventory_hostname].ansible_host_ip }}.yml"
+    #     dest: "{{ inventory_dir }}/host_vars/{{ hostvars[inventory_hostname].inventory_hostname }}.yml"
+    #   delegate_to: localhost 
+    #   register: ansible_host_ip_result
+    #   ignore_errors: True
+
+    # - name: Copy host vars of host to last-good-configuration folder of inventory for "{{ hostvars[inventory_hostname].ansible_host_ip }}"
+    #   copy:
+    #     src: "vars/values_read_from_module_{{ hostvars[inventory_hostname].ansible_host_ip }}.yml"
+    #     dest: "{{ inventory_dir }}/last-good-configuration/{{ hostvars[inventory_hostname].inventory_hostname }}.yml"
+    #   delegate_to: localhost 
+    #   register: ansible_host_ip_result
+    #   ignore_errors: True
+
+    # - name: ansible host ip test
+    #   fail:
+    #     msg: "failed"
+    #   failed_when: "'ansible_host_ip' not in ansible_host_ip_result.msg"
+      

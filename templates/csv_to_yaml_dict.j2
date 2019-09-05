@@ -1,0 +1,16 @@
+modules:
+{% set title = csvfile.split("\n") %}
+{% set title = title[0].split(",") %}
+{% for item in csvfile.split("\n") %}
+{%   if loop.index != 1 %}
+{%     set values = item.split(",") %}
+{% for x in title %}
+{% if x == title[0] %}
+  {{ values[3]|trim() }}:
+    {{ x|trim() }}: "{{ values[loop.index - 1 ]|trim() }}"
+{% else %}
+    {{ x|trim() }}: "{{ values[loop.index - 1 ]|trim() }}"
+{% endif %}
+{% endfor %}
+{% endif %}
+{% endfor %}

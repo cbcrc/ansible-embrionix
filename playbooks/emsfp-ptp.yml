@@ -1,0 +1,28 @@
+# Copyright: (c) 2018, Société Radio-Canada>
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+#
+---
+- hosts: all
+  gather_facts: no
+  vars:
+    - ansible_python_interpreter: "{{ lookup('env','VIRTUAL_ENV') }}/bin/python"
+
+  tasks: 
+    - name: Pousser la configuration pour refclk
+      emsfp_refclk_id:
+        ip_addr: "{{ ipconfig.ip_addr }}"
+        reference_clock_id: "{{ item.reference_clock_id }}"
+        mode: "{{ item.PTP_mode }}"
+        manual_ctrl: "{{ item.ManualMode }}"
+      loop: "{{ reference_clocks }}"
+      connection: local
+
+    - name: Pousser la configuration pour refclk_id
+      emsfp_refclk_id:
+        ip_addr: "{{ ipconfig.ip_addr }}"
+        reference_clock_id: "{{ item.reference_clock_id }}"
+        domain_num: "{{ item.PTP_domain_nb }}"
+        vlan_id: "{{ item.PTP_VlanID }}"
+        dscp: "{{ item.PTP_dscp }}"
+      loop: "{{ reference_clocks }}"
+      connection: local

@@ -1,0 +1,22 @@
+# Copyright: (c) 2018, Société Radio-Canada>
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+#
+---
+- hosts: all
+  gather_facts: no
+  vars:
+    - ansible_python_interpreter: "{{ lookup('env','VIRTUAL_ENV') }}/bin/python"
+
+  tasks: 
+    - name: Pousser la configuration
+      emsfp_line_offset:
+        ip_addr: "{{ ipconfig.ip_addr }}"
+        module_type: "{{ module_type }}"
+        sdi_channel_id: "{{ item.sdi_channel_id }}"
+        frame_sync: "{{ item.frame_sync }}"
+        offset_mode: "{{ item.offset_mode }}"
+        usec_offset: "{{ item.usec_offset }}"
+        v_offset: "{{ item.v_offset }}"
+        h_offset: "{{ item.h_offset }}"
+      loop: "{{ line_offset }}"
+      connection: local
