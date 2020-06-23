@@ -1,0 +1,23 @@
+# Playbook embox-port.yml
+#
+# This playbook configures embox6 port parameters from inventory values.
+#
+# Copyright: (c) 2018, Société Radio-Canada>
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+#
+---
+- hosts: emsfp
+  gather_facts: no
+  vars_files:
+      - common_vars/box/all.yml
+  vars:
+    - ansible_python_interpreter: /usr/bin/env python
+
+  tasks:
+    - name: Port parameter is configured
+      embox_port:
+        ip_addr: "{{ hostvars[inventory_hostname].ansible_host_ip }}"
+        port_id: "all"
+        sfp_type: "{{ port_sfp_type }}"
+        host_pinout: "{{ port_host_pinout }}"
+      delegate_to: localhost

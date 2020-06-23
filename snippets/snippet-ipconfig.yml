@@ -1,0 +1,15 @@
+# snippet-ipconfig.yml
+#
+# This tasks snippet is used by playbooks to upload Embrionix device ipconfig configuration.
+#
+# Copyright: (c) 2018, Société Radio-Canada>
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+#
+---
+- name: Pousser la configuration
+  emsfp_ipconfig:
+    ip_addr: "{{ ipconfig.ip_addr }}"
+    hostname: "{{ ipconfig.hostname }}"
+    dhcp_enable: "{{ ipconfig.dhcp_enable }}"
+    ctl_vlan_id: "{{ ipconfig.ctl_vlan_id }}"
+  delegate_to: localhost

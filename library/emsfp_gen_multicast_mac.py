@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
+#
 # Copyright: (c) 2018, Société Radio-Canada>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
-
-from ansible.module_utils.basic import *
+#
+from ansible.module_utils.basic import AnsibleModule
 from re import fullmatch
+from module_utils.utils import IP_ADDRESS_REGEX
 
 ANSIBLE_METADATA = {'metadata_version': '1.0.0',
                     'status': ['preview'],
@@ -22,7 +23,7 @@ description:
 options:
 
 notes:
-    *** Multicast MAC algorithm provided by Embrionix.
+    *** Part of this code whas provided by Embrionix.
 requirements:
 
 '''
@@ -42,11 +43,6 @@ status:
 '''[Constantes de validation des entrées]
 
 '''
-
-
-#Define REGEX Pattern for IP Addresses.
-IP_ADDRESS_REGEX = "^(([01]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5]).([01]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5]).([01]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5]).([01]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5]))$"
-
 
 def get_mac_from_multicast_ip(ip):
     """Generate the multicast MAC address using the IP address

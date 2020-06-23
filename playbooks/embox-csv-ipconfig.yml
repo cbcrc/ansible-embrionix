@@ -1,0 +1,62 @@
+# Playbook embox-csv-ipconfig.yml
+#
+# This playbook configures embox ip configurations
+#
+# Valid csv columns:
+# ip_addr,subnet_mask,gateway,hostname,port,dhcp_enable,alias_ip,alias_ip_subnet,ctl_vlan_id,ctl_vlan_pcp,ctl_vlan_enable
+#
+# Copyright: (c) 2018, Société Radio-Canada>
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+#
+---
+- hosts: localhost
+  gather_facts: no
+  vars:
+    - var_ip_config_file: "csv/ip-config-file.csv"
+    - ansible_python_interpreter: /usr/bin/env python
+
+  tasks:
+    - name: Conversion CSV vers YML.
+      template:
+        src: "templates/csv_to_yaml.j2"
+        dest: "vars/ipconfigs_payload.yml"
+        force: yes
+      vars: 
+        - csvfile: "{{ lookup('file', '{{ var_ip_config_file }}') }}"
+        - ansible_python_interpreter: /usr/bin/env python
+      run_once: true
+      check_mode: no
+      changed_when: no
+
+    - name: Get Modules configuration from the generated YML file.
+      include_vars: ipconfigs_payload.yml
+      check_mode: no
+      changed_when: no
+
+    - name: Configure red and blue network (and wait for device reboot)
+      embox_interfaces:
+        ip_addr: "{{ item.ip_addr_red }}"
+        e1_ip: "{{ item.ip_addr_red }}"
+        e1_subnet_mask: "{{ item.subnet_mask }}"
+        e1_gateway: "{{ item.gateway_red }}"
+        e2_ip: "{{ item.ip_addr_blue }}"
+        e2_subnet_mask: "{{ item.subnet_mask }}"
+        e2_gateway: "{{ item.gateway_blue }}"
+      loop: "{{ modules }}"
+      delegate_to: localhost
+
+    - name: Configurer le hostname
+      emsfp_ipconfig:
+        ip_addr: "{{ item.ip_addr_red }}"
+        hostname: "{{ item.hostname }}"
+      loop: "{{ modules }}"
+      delegate_to: localhost
+
+    - name: Waits for port 80 after reboot
+      wait_for:
+        host: "{{ item.ip_addr_red }}"
+        port: 80
+        delay: 1
+        state: started
+      loop: "{{ modules }}"
+      delegate_to: localhost

@@ -1,0 +1,20 @@
+# These tasks are used by embox-sdi.yml import_playbook
+#
+# Copyright: (c) 2018, Société Radio-Canada>
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+#
+---
+- name: Register box type
+  emsfp_get_type_2:
+    ip_addr: "{{module_item['ip_addr_red']}}"
+  register: embox_type
+  delegate_to: localhost
+
+- name: sdi/operating_bit_rate is configured
+  embox_sdi:
+    ip_addr: "{{ module_item.ip_addr_red }}"
+    operating_bit_rate: "{{ module_item.operating_bit_rate }}"
+  loop: "{{ modules }}"
+  delegate_to: localhost
+  when: 
+    - embox_type.type in ["Embox6_8", "box3u_25G"]

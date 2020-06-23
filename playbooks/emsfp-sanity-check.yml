@@ -1,19 +1,23 @@
+# Playbook emsfp-sanity-check.yml
+#
+# This playbook check if the device configuration matches its inventory values.
+#
 # Copyright: (c) 2018, Société Radio-Canada>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 #
 ---
-- hosts: all
+- hosts: emsfp
   gather_facts: no
   vars:
     - ansible_python_interpreter: "/usr/bin/env python"
 
   tasks:
-    - debug:
-        msg: "{{inventory_dir}}"
-      delegate_to: localhost
+    - name: create reachable_hosts group.
+      import_tasks: snippets/snippet-list-reachable-hosts.yml
 
     - name: check differences of hosts with last known good configuration
       emsfp_sanity_check:
         last_known: "{{ inventory_dir }}/host_vars/{{ hostvars[inventory_hostname].inventory_hostname }}.yml"
         current: "{{ inventory_dir }}/last-good-configuration/{{ hostvars[inventory_hostname].inventory_hostname }}.yml"
       delegate_to: localhost
+      when: "'reachable_hosts' in group_names"

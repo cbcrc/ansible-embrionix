@@ -6,7 +6,7 @@ modules:
 {%   if loop.index != 1 %}
 {%     set values = item.split(",") %}
 {% for x in title %}
-{% if x == 'IP_Adress' %}
+{% if x == 'ip_addr' %}
 {% set ns.ip = values[loop.index - 1 ]|trim() %}
 {% else %}
 {% if x.endswith('AudMap') %}

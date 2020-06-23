@@ -1,10 +1,22 @@
+# Playbook emsfp-save-config.yml
+#
+# This playbook creates a host_vars file form the device configuration parameters.
+#
 # Copyright: (c) 2018, Société Radio-Canada>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 #
 ---
-- import_playbook: emsfp-config-download.yml
-- import_playbook: emsfp-save-config-to-inventory.yml
+- hosts: emsfp
+  gather_facts: no
+  vars_files:
+    - ../all/all.yml
+  vars:
+    - ansible_python_interpreter: "/usr/bin/env python"
 
+  tasks:
+    - name: create reachable_hosts group.
+      import_tasks: snippets/snippet-list-reachable-hosts.yml
 
-
-
+    - name: Make sure host_vars path exists
+      import_tasks: snippets/snippet-save-config-to-host_vars.yml
+      when: "'reachable_hosts' in group_names"

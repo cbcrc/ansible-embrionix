@@ -1,0 +1,2 @@
+Put csv used by emsfp-csv playbooks in this folder. These csv won't be hosted in the repository and should be safely deleted
+or overwritten once used.

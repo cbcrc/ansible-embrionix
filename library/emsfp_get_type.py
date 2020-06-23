@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
+#
 # Copyright: (c) 2018, Société Radio-Canada>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
-
-from ansible.module_utils.basic import *
-from ansible.module_utils import emsfp_firmware_base
+#
+from ipaddress import IPv4Address, IPv4Network, AddressValueError, NetmaskValueError
+from module_utils.emsfp import EMSFP
+from ansible.module_utils.basic import AnsibleModule
+from ansible.module_utils.utils import get_module_type
 
 ANSIBLE_METADATA = {'metadata_version': '1.0.0',
                     'status': ['preview'],
@@ -22,7 +24,7 @@ description:
 options:
 
 notes:
-    *** Part of this code whas provided by the company Embrionix.
+    *** Part of this code whas provided by Embrionix.
 requirements:
 
 '''
@@ -50,11 +52,12 @@ def main():
         ),
         supports_check_mode=True,
     )
-    ip_addr = module.params['ip_addr']
 
-    emsfp_firmware = emsfp_firmware_base.EB22(ip_addr)
-    emsfp_firmware.getModuleType()
-    module.exit_json(changed=False, msg=f"Module type: {emsfp_firmware.moduleType}", type=emsfp_firmware.moduleType)
+    # url = f"http://{IPv4Address(module.params['ip_addr'])}"
+
+    # em = EMSFP(url)
+    module_type = get_module_type(module.params['ip_addr'])
+    module.exit_json(changed=False, msg=f"Module type: {module_type}", type=module_type)
 
 if __name__ == "__main__":
     main()

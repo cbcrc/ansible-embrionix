@@ -1,0 +1,123 @@
+# snippet-flows.yml
+#
+# This tasks snippet is used by playbooks to upload Embrionix device flow configuration.
+#
+# Copyright: (c) 2018, Société Radio-Canada>
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+#
+---
+- name: Get module type
+  emsfp_get_type_2:
+    ip_addr: "{{ hostvars[inventory_hostname].ansible_host_ip }}"
+  register: get_type
+  delegate_to: localhost
+  tags: always
+
+- name: Flows are configured
+  emsfp_flows:
+    ip_addr: "{{ hostvars[inventory_hostname].ansible_host_ip }}"
+    Target: "{{ hostvars[inventory_hostname].ansible_host_ip }}"
+    FlowType: "---"
+    format_type: "{{ item.value.format.format_type | default(None) }}"
+    sfp_type: "{{ get_type.type }}"
+    Flow: "{{ item.key | default(None) }}"
+    aud_chan_cnt: "{{ item.value.format.aud_chan_cnt | default(None) }}"
+    aud_chan_map: "{{ item.value.format.aud_chan_map | default(None) }}"
+    audio_mapping_ch0: "{{ item.value.format.mapping.ch0 | default(None) }}"
+    audio_mapping_ch1: "{{ item.value.format.mapping.ch1 | default(None) }}"
+    audio_mapping_ch2: "{{ item.value.format.mapping.ch2 | default(None) }}"
+    audio_mapping_ch3: "{{ item.value.format.mapping.ch3 | default(None) }}"
+    audio_mapping_ch4: "{{ item.value.format.mapping.ch4 | default(None) }}"
+    audio_mapping_ch5: "{{ item.value.format.mapping.ch5 | default(None) }}"
+    audio_mapping_ch6: "{{ item.value.format.mapping.ch6 | default(None) }}"
+    audio_mapping_ch7: "{{ item.value.format.mapping.ch7 | default(None) }}"
+    audio_mapping_ch8: "{{ item.value.format.mapping.ch8 | default(None) }}"
+    audio_mapping_ch9: "{{ item.value.format.mapping.ch9 | default(None) }}"
+    audio_mapping_ch10: "{{ item.value.format.mapping.ch10 | default(None) }}"
+    audio_mapping_ch11: "{{ item.value.format.mapping.ch11 | default(None) }}"
+    audio_mapping_ch12: "{{ item.value.format.mapping.ch12 | default(None) }}"
+    audio_mapping_ch13: "{{ item.value.format.mapping.ch13 | default(None) }}"
+    audio_mapping_ch14: "{{ item.value.format.mapping.ch14 | default(None) }}"
+    audio_mapping_ch15: "{{ item.value.format.mapping.ch15 | default(None) }}"
+    anc_flow_profile: "{{ item.value.format.anc_flow_profile | default(None) }}"
+    aud_ptime_idx: "{{ item.value.format.aud_ptime_idx | default(None) }}"
+    dscp: "{{ item.value.network.dscp | default(None) }}"
+    dst_ip_addr: "{{ item.value.network.dst_ip_addr | default(None) }}"
+    dst_udp_port: "{{ item.value.network.dst_udp_port | default(None) }}"
+    enable: "{{ item.value.network.enable | default(None) }}"
+    igmp_src_ip: "{{ item.value.network.igmp_src_ip | default(None) }}"
+    label: "{{ item.value.label | default(None) }}"
+    name: "{{ item.value.name | default(None) }}"
+    pkt_filter_dst_ip: "{{ item.value.network.pkt_filter_dst_ip | default(None) }}"
+    pkt_filter_dst_udp: "{{ item.value.network.pkt_filter_dst_udp | default(None) }}"
+    pkt_filter_dst_mac: "{{ item.value.network.pkt_filter_dst_mac | default(None) }}"
+    pkt_filter_src_ip: "{{ item.value.network.pkt_filter_src_ip | default(None) }}"
+    pkt_filter_src_udp: "{{ item.value.network.pkt_filter_src_udp | default(None) }}"
+    pkt_filter_src_mac: "{{ item.value.network.pkt_filter_src_mac | default(None) }}"
+    pkt_filter_ssrc: "{{ item.value.network.pkt_filter_ssrc | default(None) }}"
+    pkt_filter_vlan: "{{ item.value.network.pkt_filter_vlan | default(None) }}"
+    rtp_pt: "{{ item.value.network.rtp_pt | default(None) }}"
+    sender_type: "{{ item.value.network.sender_type | default(None) }}"
+    src_ip_addr: "{{ item.value.network.src_ip_addr | default(None) }}"
+    src_udp_port: "{{ item.value.network.src_udp_port | default(None) }}"
+    # ssrc: "{{ item.ssrc | default(None) }}" #read only value
+    vlan_tag: "{{ item.value.network.vlan_tag | default(None) }}"
+  loop: "{{ embrionix_module.parameters.flows | default({}) | dict2items }}"
+  when: embrionix_module.parameters is defined
+  delegate_to: localhost
+  tags: always
+
+- name: Flows are configured
+  emsfp_flows:
+    ip_addr: "{{ hostvars[inventory_hostname].ansible_host_ip }}"
+    Target: "{{ hostvars[inventory_hostname].ansible_host_ip }}"
+    FlowType: "---"
+    format_type: "{{ item.value.format.format_type | default(None) }}"
+    sfp_type: "{{ get_type.type }}"
+    Flow: "{{ item.key | default(None) }}"
+    aud_chan_cnt: "{{ item.value.format.aud_chan_cnt | default(None) }}"
+    aud_chan_map: "{{ item.value.format.aud_chan_map | default(None) }}"
+    audio_mapping_ch0: "{{ item.value.format.mapping.ch0 | default(None) }}"
+    audio_mapping_ch1: "{{ item.value.format.mapping.ch1 | default(None) }}"
+    audio_mapping_ch2: "{{ item.value.format.mapping.ch2 | default(None) }}"
+    audio_mapping_ch3: "{{ item.value.format.mapping.ch3 | default(None) }}"
+    audio_mapping_ch4: "{{ item.value.format.mapping.ch4 | default(None) }}"
+    audio_mapping_ch5: "{{ item.value.format.mapping.ch5 | default(None) }}"
+    audio_mapping_ch6: "{{ item.value.format.mapping.ch6 | default(None) }}"
+    audio_mapping_ch7: "{{ item.value.format.mapping.ch7 | default(None) }}"
+    audio_mapping_ch8: "{{ item.value.format.mapping.ch8 | default(None) }}"
+    audio_mapping_ch9: "{{ item.value.format.mapping.ch9 | default(None) }}"
+    audio_mapping_ch10: "{{ item.value.format.mapping.ch10 | default(None) }}"
+    audio_mapping_ch11: "{{ item.value.format.mapping.ch11 | default(None) }}"
+    audio_mapping_ch12: "{{ item.value.format.mapping.ch12 | default(None) }}"
+    audio_mapping_ch13: "{{ item.value.format.mapping.ch13 | default(None) }}"
+    audio_mapping_ch14: "{{ item.value.format.mapping.ch14 | default(None) }}"
+    audio_mapping_ch15: "{{ item.value.format.mapping.ch15 | default(None) }}"
+    anc_flow_profile: "{{ item.value.format.anc_flow_profile | default(None) }}"
+    aud_ptime_idx: "{{ item.value.format.aud_ptime_idx | default(None) }}"
+    dscp: "{{ item.value.network.dscp | default(None) }}"
+    dst_ip_addr: "{{ item.value.network.dst_ip_addr | default(None) }}"
+    dst_udp_port: "{{ item.value.network.dst_udp_port | default(None) }}"
+    enable: "{{ item.value.network.enable | default(None) }}"
+    igmp_src_ip: "{{ item.value.network.igmp_src_ip | default(None) }}"
+    label: "{{ item.value.label | default(None) }}"
+    name: "{{ item.value.name | default(None) }}"
+    pkt_filter_dst_ip: "{{ item.value.network.pkt_filter_dst_ip | default(None) }}"
+    pkt_filter_dst_udp: "{{ item.value.network.pkt_filter_dst_udp | default(None) }}"
+    pkt_filter_dst_mac: "{{ item.value.network.pkt_filter_dst_mac | default(None) }}"
+    pkt_filter_src_ip: "{{ item.value.network.pkt_filter_src_ip | default(None) }}"
+    pkt_filter_src_udp: "{{ item.value.network.pkt_filter_src_udp | default(None) }}"
+    pkt_filter_src_mac: "{{ item.value.network.pkt_filter_src_mac | default(None) }}"
+    pkt_filter_ssrc: "{{ item.value.network.pkt_filter_ssrc | default(None) }}"
+    pkt_filter_vlan: "{{ item.value.network.pkt_filter_vlan | default(None) }}"
+    rtp_pt: "{{ item.value.network.rtp_pt | default(None) }}"
+    sender_type: "{{ item.value.network.sender_type | default(None) }}"
+    src_ip_addr: "{{ item.value.network.src_ip_addr | default(None) }}"
+    src_udp_port: "{{ item.value.network.src_udp_port | default(None) }}"
+    # ssrc: "{{ item.ssrc | default(None) }}" #read only value
+    vlan_tag: "{{ item.value.network.vlan_tag | default(None) }}"
+  loop: "{{ emsfp_module.parameter.flows | default({}) | dict2items }}"
+  when: emsfp_module.parameter is defined
+  #big duplicate for a small change
+  delegate_to: localhost
+  tags: always

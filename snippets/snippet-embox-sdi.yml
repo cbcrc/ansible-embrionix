@@ -1,0 +1,22 @@
+# snippet-embox-sdi.yml
+#
+# This tasks snippet is used by playbooks to configure embox6 device sdi parameters.
+#
+# Copyright: (c) 2018, Société Radio-Canada>
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+#
+---
+- name: Register box type
+  emsfp_get_type_2:
+    ip_addr: "{{ hostvars[inventory_hostname].ansible_host_ip }}"
+  register: embox_type
+  delegate_to: localhost
+
+- name: sdi/operating_bit_rate is configured
+  embox_sdi:
+    ip_addr: "{{ hostvars[inventory_hostname].ansible_host_ip }}"
+    operating_bit_rate: "{{ item.value.operating_bit_rate }}"
+  loop: "{{ embrionix_module.sdi }}"
+  delegate_to: localhost
+  when: 
+    - embox_type.type in ["Embox6_8", "box3u_25G"]

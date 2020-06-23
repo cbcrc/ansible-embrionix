@@ -1,0 +1,95 @@
+# Playbook emsfp-csv-flows.yml
+#
+# Description
+#   Le playbook emsfp put flow vise à à pousser les configurations de flows des modules_flows_config emsfp. Le playbook utilise les valeurs
+#   provenant d'un csv.
+#   Ce playbook est légèrement différent des playbook **sfp-(...)** en quelques points :
+#     - Il y a une validation de trois champs obligatoires, soit "Target" (Adresse IP du module emsfp), "Flow" (Flow ID du flow) et 
+#       "FlowType" (enc_video, enc_audio, enc_ancillary, dec_video, dec_audio, dec_ancillary).
+#     - Il s'addresse aux modules_flows_config de type Encapsulateur et Decapsulateur. Pour ces deux types de modules_flows_config, les valeurs assignées au
+#       flow dans le csv doivent correspondre soit à un flow video, audio ou ancilliary.
+#     - Une addresse MAC est générée à partir de l'adresse IP "dst_ip_addr" selon un script fournie par emsfp. Cette valeur est
+#       assignée au champs dst_mac du payload envoyé au module.
+#
+# Utilisation
+#
+#   Ce playbook puise les valeurs à configurer dans un csv comportant les colonnes suivantes:
+#     "Target,FlowType,Flow,label,name,src_ip_addr,src_udp_port,dst_ip_addr,dst_udp_port,dst_mac,vlan_tag,ssrc,rtp_pt,dscp,
+#      enable,aud_chan_map,aud_ptime_idx,anc_flow_profile"
+#
+#   Le csv contenant les valeurs à programmer doit être (par défaut) déposé à l'endroit suivant: "csv/config-file.csv".
+#   Le playbook peut ensuite être exécuté avec la commande suivante:
+#     `ansible-playbook [nom du playbook] -i inventaire/[chemin du fichier d'inventaire] -l [machine ou groupe cible] -v`
+#
+# Copyright: (c) 2018, Société Radio-Canada>
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+#
+---
+- hosts: localhost
+  gather_facts: no
+  vars:
+    var_file: "csv/config-file.csv"
+
+  tasks:
+  - name: Parse CSV to YML.
+    template:
+      src: "templates/csv_to_yaml_flows_v3.j2"
+      dest: "vars/values_from_csv_flows_payload_v3.yml"
+    vars: 
+      - csvfile: "{{ lookup('file', '{{ var_file }}') }}"
+      - ansible_python_interpreter: /usr/bin/python
+    run_once: true
+    check_mode: no
+    changed_when: no
+
+  - name: Get modules_flows_config configuration from the generated YML file.
+    include_vars: values_from_csv_flows_payload_v3.yml
+
+  - name: Send Put request via emsfp_put_flows
+    emsfp_flows:
+      ip_addr: "{{ modules_flows_config[item|int]['ip_addr'] | default(None) }}"
+      Target: "{{ modules_flows_config[item|int]['Target'] | default(None) }}"
+      FlowType: "{{ modules_flows_config[item|int]['FlowType'] | default(None) }}"
+      Flow: "{{ modules_flows_config[item|int]['Flow'] | default(None) }}"
+      aud_chan_cnt: "{{ modules_flows_config[item|int]['aud_chan_cnt'] | default(None) }}"
+      aud_chan_map: "{{ modules_flows_config[item|int]['aud_chan_map'] | default(None) }}"
+      audio_mapping_ch0: "{{ modules_flows_config[item|int]['ch0'] | default(None) }}"
+      audio_mapping_ch1: "{{ modules_flows_config[item|int]['ch1'] | default(None) }}"
+      audio_mapping_ch2: "{{ modules_flows_config[item|int]['ch2'] | default(None) }}"
+      audio_mapping_ch3: "{{ modules_flows_config[item|int]['ch3'] | default(None) }}"
+      audio_mapping_ch4: "{{ modules_flows_config[item|int]['ch4'] | default(None) }}"
+      audio_mapping_ch5: "{{ modules_flows_config[item|int]['ch5'] | default(None) }}"
+      audio_mapping_ch6: "{{ modules_flows_config[item|int]['ch6'] | default(None) }}"
+      audio_mapping_ch7: "{{ modules_flows_config[item|int]['ch7'] | default(None) }}"
+      audio_mapping_ch8: "{{ modules_flows_config[item|int]['ch8'] | default(None) }}"
+      audio_mapping_ch9: "{{ modules_flows_config[item|int]['ch9'] | default(None) }}"
+      audio_mapping_ch10: "{{ modules_flows_config[item|int]['ch10'] | default(None) }}"
+      audio_mapping_ch11: "{{ modules_flows_config[item|int]['ch11'] | default(None) }}"
+      audio_mapping_ch12: "{{ modules_flows_config[item|int]['ch12'] | default(None) }}"
+      audio_mapping_ch13: "{{ modules_flows_config[item|int]['ch13'] | default(None) }}"
+      audio_mapping_ch14: "{{ modules_flows_config[item|int]['ch14'] | default(None) }}"
+      audio_mapping_ch15: "{{ modules_flows_config[item|int]['ch15'] | default(None) }}"
+      anc_flow_profile: "{{ modules_flows_config[item|int]['anc_flow_profile'] | default(None) }}"
+      aud_ptime_idx: "{{ modules_flows_config[item|int]['aud_ptime_idx'] | default(None) }}"
+      dscp: "{{ modules_flows_config[item|int]['dscp'] | default(None) }}"
+      dst_ip_addr: "{{ modules_flows_config[item|int]['dst_ip_addr'] | default(None) }}"
+      dst_udp_port: "{{ modules_flows_config[item|int]['dst_udp_port'] | default(None) }}"
+      enable: "{{ modules_flows_config[item|int]['enable'] | default(None) }}"
+      igmp_src_ip: "{{ modules_flows_config[item|int]['igmp_src_ip'] | default(None) }}"
+      label: "{{ modules_flows_config[item|int]['label'] | default(None) }}"
+      name: "{{ modules_flows_config[item|int]['name'] | default(None) }}"
+      pkt_filter_dst_ip: "{{ modules_flows_config[item|int]['pkt_filter_dst_ip'] | default(None) }}"
+      pkt_filter_dst_udp: "{{ modules_flows_config[item|int]['pkt_filter_dst_udp'] | default(None) }}"
+      pkt_filter_dst_mac: "{{ modules_flows_config[item|int]['pkt_filter_dst_mac'] | default(None) }}"
+      pkt_filter_src_ip: "{{ modules_flows_config[item|int]['pkt_filter_src_ip'] | default(None) }}"
+      pkt_filter_src_udp: "{{ modules_flows_config[item|int]['pkt_filter_src_udp'] | default(None) }}"
+      pkt_filter_src_mac: "{{ modules_flows_config[item|int]['pkt_filter_src_mac'] | default(None) }}"
+      pkt_filter_ssrc: "{{ modules_flows_config[item|int]['pkt_filter_ssrc'] | default(None) }}"
+      pkt_filter_vlan: "{{ modules_flows_config[item|int]['pkt_filter_vlan'] | default(None) }}"
+      rtp_pt: "{{ modules_flows_config[item|int]['rtp_pt'] | default(None) }}"
+      sender_type: "{{ modules_flows_config[item|int]['sender_type'] | default(None) }}"
+      src_ip_addr: "{{ modules_flows_config[item|int]['src_ip_addr'] | default(None) }}"
+      src_udp_port: "{{ modules_flows_config[item|int]['src_udp_port'] | default(None) }}"
+      # ssrc: "{{ modules_flows_config[item|int]['ssrc'] | default(None) }}" #read only value
+      vlan_tag: "{{ modules_flows_config[item|int]['vlan_tag'] | default(None) }}"
+    loop: "{{ range(0, modules_flows_config | length)|list }}"

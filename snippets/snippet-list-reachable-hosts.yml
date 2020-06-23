@@ -1,0 +1,23 @@
+# snippet-list-reachable-hosts.yml
+#
+# This tasks snippet is used by playbooks to create a group containing all reachable
+# Embrionix devices in a given inventory. This group can later be used to avoid unreachable
+# host errors in the playbook.
+#
+# Copyright: (c) 2018, Société Radio-Canada>
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+#
+---
+- block:
+    - name: ping hosts
+      local_action: "command ping -c 2 {{ hostvars[inventory_hostname].ansible_host_ip}}"
+      register: result
+    - name: add reached host to reachable_host group
+      group_by:
+        key: "reachable_hosts"
+      when: result.rc == 0
+  rescue:
+    - name: add unreached hosts to unreachable_hosts list
+      debug:
+        msg: "{{inventory_hostname}}  is unreachable"
+  when: "'emsfp' in group_names"

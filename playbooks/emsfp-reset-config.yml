@@ -1,16 +1,24 @@
+# Playbook emsfp-reset-config.yml
+#
+# This playbook can be used to reset device configuration. It's usually triggered by a Jenkins pipeline.
+#
 # Copyright: (c) 2018, Société Radio-Canada>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 #
 ---
-- hosts: all
+- hosts: emsfp
   gather_facts: no
   vars:
     - ansible_python_interpreter: "{{ lookup('env','VIRTUAL_ENV') }}/bin/python"
 
-  tasks: 
-    - name: Pousser la configuration
+  tasks:
+    - name: create reachable_hosts group.
+      import_tasks: snippets/snippet-list-reachable-hosts.yml
+
+    - name: Envoyer les informations pour le reset
       emsfp_reset_configs:
-        ip_addr: "{{ ipconfig.Target }}"
+        ip_addr: "{{ hostvars[inventory_hostname].ansible_host_ip}}"
         reboot: "{{ reboot }}"
         config_reset: "{{ config_reset }}"
-      connection: local
+      delegate_to: localhost
+      when: "'reachable_hosts' in group_names"

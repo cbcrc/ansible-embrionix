@@ -1,12 +1,14 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
+#
 # Copyright: (c) 2018, Société Radio-Canada>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
-
-from ansible.module_utils.basic import AnsibleModule
-from module_utils import emsfp
+#
+from ipaddress import IPv4Address,IPv4Network, AddressValueError, NetmaskValueError
+from module_utils.emsfp import EMSFP
+from module_utils.utils import configure_em_device
 from yaml import dump
+from ansible.module_utils.basic import AnsibleModule
 
 ANSIBLE_METADATA = {'metadata_version': '1.0.0',
                     'status': ['preview'],
@@ -43,9 +45,6 @@ status:
 '''[Constantes de validation des entrées]
 
 '''
-# Verifie que les valeurs entrées sont de 0.0.0.0 à 255.255.255.255.
-IP_ADDRESS_REGEX = "^(([01]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5]).([01]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5]).([01]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5]).([01]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5]))$"
-DUMMY_REGEX = "^[-\s\w\W]*$"
 
 PAYLOAD_TEMPLATE = {
     'reboot': ["bool"],
@@ -61,30 +60,19 @@ def main():
         supports_check_mode=True,
     )
 
-    url = f"http://{emsfp.EMSFP.clean_ip(module.params['ip_addr'])}/emsfp/node/v1/self/system/"
-
-    sfp_module = emsfp.EMSFP(url, module.params, PAYLOAD_TEMPLATE)
-    module_inital_config = sfp_module.get_module_config
-
-    # Pousser la nouvelle config si elle est différente de la config du module
     try:
-        inital_comp = sfp_module.get_config_diff
-    except KeyError as e:
-        module.fail_json(changed=False, msg=f"{e}")
-    else:
-        if inital_comp:
-            if not module.check_mode:
-                try:
-                    response_message = sfp_module.send_configuration(validate_changes=False)
-                except Exception as e:
-                    module.fail_json(changed=False, msg=f"{e}")
-                else:
-                    module.exit_json(changed=True, msg=f"{response_message}")
-            else:
-                module.exit_json(changed=True, msg=f"Values that would be modified (check_mode):", values=dump(inital_comp, default_flow_style=False))
-        # Le payload == response, pas besoin d'en faire plus
-        else:
-            module.exit_json(changed=False, msg=f"Nothing to change: \n{dump(module_inital_config, default_flow_style=False)}")
+        url = f"http://{IPv4Address(module.params['ip_addr'])}/emsfp/node/v1/self/system/"
+    except (AddressValueError, NetmaskValueError) as e:
+        module.fail_json(changed=False, msg=e)
+
+    payload_params = {
+        'reboot': module.params['reboot'],
+        'config_reset': module.params['config_reset']
+    }
+
+    em = EMSFP(url, module.params, PAYLOAD_TEMPLATE)
+
+    configure_em_device(module, em, validate_changes=False)
 
 if __name__ == '__main__':
     main() 

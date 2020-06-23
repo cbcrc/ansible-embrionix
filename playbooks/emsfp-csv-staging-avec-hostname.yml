@@ -1,0 +1,50 @@
+# Playbook emsfp-csv-staging-avec-hostname.yml
+#
+# This playbook is used to stage Embrionix st2110 modules using smbus to configure ip parameter. The hostname is
+# configured using the REST api. All the configured parameters values are provided by a csv.
+#
+# The devices can be accessed using there MAC address or the arista switch port number. One of these values must
+# be present in the csv.
+#
+# Required csv columns using MAC address:
+# port_number,mac_address,ip_addr,gateway,Subnet_mask,hostname
+#
+# Required csv columns using switch port:
+# port_number,ip_addr,gateway,Subnet_mask,hostname
+#
+# Copyright: (c) 2018, Société Radio-Canada>
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+#
+---
+- hosts: localhost
+  gather_facts: no
+
+- import_playbook: emsfp-csv-staging.yml
+
+- hosts: arista
+  gather_facts: no
+  vars:
+    var_file: "csv/config-file.csv"
+  tasks:
+    - name: Conversion CSV vers YML.
+      template:
+        src: "templates/csv_to_yaml_dict.j2"
+        dest: "vars/ipconfigs_payload.yml"
+        force: yes
+      vars: 
+        - csvfile: "{{ lookup('file', '{{ var_file }}') }}"
+        - ansible_python_interpreter: /usr/bin/env python
+      run_once: true
+      changed_when: no
+      delegate_to: localhost
+      
+    - name: Get Modules configuration from the generated YML file.
+      include_vars: ipconfigs_payload.yml
+      changed_when: no
+
+    - name: Pousser la configuration
+      emsfp_ipconfig:
+        ip_addr: "{{ item.value.ip_addr }}"
+        hostname: "{{ item.value.hostname }}"
+      loop: "{{ modules|dict2items }}"
+      delegate_to: localhost

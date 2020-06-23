@@ -1,0 +1,15 @@
+---
+ansible_connection: network_cli
+ansible_network_os: eos
+ansible_password: '{{ vault_arista_pass }}'
+ansible_user: '{{ vault_arista_user }}'
+arista_pass: '{{ vault_arista_pass }}'
+arista_user: '{{ vault_arista_user }}'
+inventory_base_path: inventory/LAB/INVENTORY_EXEMPLE
+csv_base_path: inventory/LAB/INVENTORY_EXEMPLE/csv
+emsfp_csv_path: "{ csv_base_path }/EMSFP_data.csv"
+ipconfig_csv_path: "{ csv_base_path }/test_ipconfig_payload.csv"
+flow_csv_path: "{ csv_base_path }/modules_flow_payload.csv"
+reset_csv_path: "{ csv_base_path }/test_reset_payload.csv"
+sdi_audio_mapping_csv_path: "{ csv_base_path }/EmbrionixConfigurationCSV.csv"
+ptp_csv_path: "{ csv_base_path }/EmbrionicConfigurationCSV.csv"

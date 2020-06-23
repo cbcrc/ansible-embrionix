@@ -1,0 +1,47 @@
+# Playbook embox-csv-sdi.yml
+#
+# This playbook configures embox6 sdi parameters from values provided by a csv.
+#
+# Required csv values:
+# ip_addr_red, operating_bit_rate
+#
+# Copyright: (c) 2018, Société Radio-Canada>
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+#
+---
+- hosts: localhost
+  gather_facts: no
+  vars:
+    - var_ip_config_file: "csv/ip-config-file.csv"
+    - ansible_python_interpreter: /usr/bin/env python
+
+  tasks:
+    - name: Conversion CSV vers YML.
+      template:
+        src: "templates/csv_to_yaml.j2"
+        dest: "vars/ipconfigs_payload.yml"
+        force: yes
+      vars: 
+        - csvfile: "{{ lookup('file', '{{ var_ip_config_file }}') }}"
+        - ansible_python_interpreter: /usr/bin/env python
+      run_once: true
+      check_mode: no
+      changed_when: no
+
+    - name: Get Modules configuration from the generated YML file.
+      include_vars: ipconfigs_payload.yml
+      check_mode: no
+      changed_when: no
+
+    - name: loop over modules
+      include_tasks: embox-csv-sdi-block.yml
+      loop: "{{modules}}"
+      loop_control:
+        loop_var: module_item
+
+    # - name: Le paramètre sdi/operating_bit_rate est configuré
+    #   embox_sdi:
+    #     ip_addr: "{{ item.ip_addr_red }}"
+    #     operating_bit_rate: "{{ item.BIT_rate }}"
+    #   loop: "{{ modules }}"
+    #   delegate_to: localhost

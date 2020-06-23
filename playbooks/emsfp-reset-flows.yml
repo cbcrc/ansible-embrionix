@@ -1,0 +1,24 @@
+# Playbook emsfp-reset-flows.yml
+#
+# This playbook can be used to reset device flow configurations.
+#
+# Copyright: (c) 2018, Société Radio-Canada>
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+#
+---
+- hosts: emsfp
+  gather_facts: no
+  vars:
+    - ansible_python_interpreter: "{{ lookup('env','VIRTUAL_ENV') }}/bin/python"
+
+  tasks:
+    - name: create reachable_hosts group.
+      import_tasks: snippets/snippet-list-reachable-hosts.yml
+
+    - name: Flows are resetted
+      emsfp_reset_configs:
+        ip_addr: "{{ hostvars[inventory_hostname].ansible_host_ip}}"
+        reboot: yes
+        config_reset: "flows"
+      delegate_to: localhost
+      when: "'reachable_hosts' in group_names"

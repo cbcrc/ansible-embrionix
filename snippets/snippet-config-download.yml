@@ -1,0 +1,93 @@
+# snippet-config-download.yml
+#
+# This tasks snippet is used by playbooks to download Embrionix device configuration. The configuration data is
+# registered in downloaded_config variable and written in vars/values_read_from_module_[host_ip].yml
+#
+# Copyright: (c) 2018, Société Radio-Canada>
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+#
+---
+- name: Register module type
+  emsfp_get_type_2:
+    ip_addr: "{{ hostvars[inventory_hostname].ansible_host_ip }}"
+  delegate_to: localhost
+  register: snippet_module
+
+- name: Register st2110 module configuration
+  block:
+    - include_vars:
+        file: common_vars/st2110_key_filter.yml
+    - emsfp_config_download:
+        ip_addr: "{{ ansible_host_ip }}"
+        ignored_route_filter:
+          - diag/
+          - sdp/
+        key_filter: "{{ emsfp_key_filter }}"
+      register: downloaded_config
+    - name: Write temporary downloaded config to file
+      copy:
+        content: "{{ downloaded_config.msg }}"
+        dest: "vars/values_read_from_module_{{ ansible_host_ip }}.yml"
+        force: yes
+      when: not ansible_check_mode
+      vars:
+        - ansible_python_interpreter: "/usr/bin/python"
+  delegate_to: localhost
+  tags: always
+  when: snippet_module.type in ["st2110_10G_enc", "st2110_10G_dec"]
+
+- name: Register box6 module configuration
+  block:
+    - include_vars:
+        file: common_vars/box6_key_filter.yml
+    - emsfp_config_download:
+        ip_addr: "{{ ansible_host_ip }}"
+        ignored_route_filter:
+          - diag/
+          - sdp/
+          - senders_sdp/
+          - receivers_sdp/
+          - bulk/
+          - syslog/
+        key_filter: "{{ box6_key_filter }}"
+      register: downloaded_config
+    - debug:
+        var: downloaded_config.msg
+    - name: Write temporary downloaded config to file
+      copy:
+        content: "{{ downloaded_config.msg }}"
+        dest: "vars/values_read_from_module_{{ ansible_host_ip }}.yml"
+        force: yes
+      when: not ansible_check_mode
+      vars:
+        - ansible_python_interpreter: "/usr/bin/python"
+  delegate_to: localhost
+  tags: always
+  when: snippet_module.type == "Embox6_8"
+
+- name: Register box3u module configuration
+  block:
+    - include_vars:
+        file: common_vars/box3_key_filter.yml
+    - emsfp_config_download:
+        ip_addr: "{{ ansible_host_ip }}"
+        ignored_route_filter:
+          - diag/
+          - sdp/
+          - senders_sdp/
+          - receivers_sdp/
+          - bulk/
+          - syslog/
+        key_filter: "{{ box3_key_filter }}"
+      register: downloaded_config
+    - name: Write temporary downloaded config to file
+      copy:
+        content: "{{ downloaded_config.msg }}"
+        dest: "vars/values_read_from_module_{{ ansible_host_ip }}.yml"
+        force: yes
+      when: not ansible_check_mode
+      vars:
+        - ansible_python_interpreter: "/usr/bin/python"
+  delegate_to: localhost
+  tags: always
+  when: snippet_module.type == "box3u_25G"

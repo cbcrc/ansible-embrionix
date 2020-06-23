@@ -1,0 +1,56 @@
+# snippet-config-upload.yml
+#
+# This tasks snippet is used by playbooks to upload Embrionix device configuration. It leverages other tasks snippet
+# for specific configuration section.
+#
+# Copyright: (c) 2018, Société Radio-Canada>
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+#
+---
+- name: Register module type
+  emsfp_get_type_2:
+    ip_addr: "{{ hostvars[inventory_hostname].ansible_host_ip }}"
+  register: module_type
+  delegate_to: localhost
+
+- debug:
+    var: module_type
+  delegate_to: localhost
+
+- block:
+    - name: Configure flows
+      import_tasks: snippets/snippet-flows.yml
+    - name: Configure ptp
+      import_tasks: snippets/snippet-ptp.yml
+    - name: Configure sdi audio output
+      import_tasks: snippets/snippet-sdi-audio-output.yml
+    - name: Register universal framsync license
+      import_tasks: snippets/snippet-register-universal-framesync-license.yml
+    - name: Configure franesync options
+      import_tasks: snippets/snippet-frame-sync.yml
+  when: module_type.type in ["st2110_10G_enc", "st2110_10G_dec"]
+
+- block:
+    - include_tasks: snippets/snippet-flows.yml
+    - include_tasks: snippets/snippet-ptp.yml
+    - include_tasks: snippets/snippet-sdi-audio-output.yml
+    - include_tasks: snippets/snippet-register-universal-framesync-license.yml
+    - include_tasks: snippets/snippet-frame-sync.yml
+    - include_tasks: snippets/snippet-embox-sdi-audio-mapping.yml
+    - include_tasks: snippets/snippet-embox-sdi.yml
+  when: module_type.type == "Embox6_8"
+
+- block:
+    - name: Configure flows
+      include_tasks: snippets/snippet-flows.yml
+    - name: Configure ptp
+      include_tasks: snippets/snippet-ptp.yml
+    - name: Configure sdi audio output
+      include_tasks: snippets/snippet-sdi-audio-output.yml
+    - name: Configure universal framsync license
+      include_tasks: snippets/snippet-register-universal-framesync-license.yml
+    - name: Configure frame sync option
+      include_tasks: snippets/snippet-frame-sync.yml
+    - name: Configure sdi audio mapping
+      include_tasks: snippets/snippet-embox-sdi-audio-mapping.yml
+  when: module_type.type == "box3u_25G"

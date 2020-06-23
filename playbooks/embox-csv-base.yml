@@ -1,0 +1,14 @@
+# Playbook embox-csv-base
+#
+# This master playbook call other playbooks to configure Embrionix embox devices.
+#
+# Copyright: (c) 2018, Société Radio-Canada>
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+#
+---
+- import_playbook: emsfp-csv-ipconfig.yml
+- import_playbook: emsfp-csv-sdi.yml
+- import_playbook: emsfp-csv-port.yml
+- import_playbook: emsfp-csv-refclk.yml
+- import_playbook: emsfp-csv-framesync-licence.yml
+- import_playbook: emsfp-csv-flows.yml

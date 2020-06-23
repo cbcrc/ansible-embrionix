@@ -1,0 +1,23 @@
+# Playbook emsfp-config-upload-v2.yml
+#
+# This playbook configures Embrionix devices from their inventory values
+#
+# Copyright: (c) 2018, Société Radio-Canada>
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+#
+---
+- hosts: emsfp
+  gather_facts: no
+  vars_files:
+    - ../all/all.yml
+    - common_vars/framesync_licence.yml
+    - common_vars/em_firmware_location.yml
+  vars:
+    - ansible_python_interpreter: /usr/bin/env python
+
+  tasks:
+    - name: create reachable_hosts group.
+      import_tasks: snippets/snippet-list-reachable-hosts.yml
+
+    - import_tasks: snippets/snippet-config-upload.yml
+      when: "'reachable_hosts' in group_names"

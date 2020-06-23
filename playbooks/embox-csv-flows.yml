@@ -1,0 +1,71 @@
+# Playbook emsfp-csv-flows.yml
+#
+# Description
+#   Le playbook embox-csv-flow vise à pousser les configurations de flows des embox. Le playbook utilise les valeurs
+#   provenant d'un csv.
+#   Ce playbook est légèrement différent des playbook em**-(...)** en quelques points :
+#     - Il y a une validation de trois champs obligatoires, soit "Target" (Adresse IP du module emsfp), "Flow" (Flow ID du flow) et 
+#       "FlowType" (enc_video, enc_audio, enc_ancillary, dec_video, dec_audio, dec_ancillary).
+#     - Il s'adresse aux modules de type Encapsulateur et Decapsulateur. Pour ces deux types de modules, les valeurs assignées au
+#       flow dans le csv doivent correspondre soit à un flow video, audio ou ancilliary.
+#     - Une adresse MAC est générée à partir de l'adresse IP "dst_ip_addr" selon un script fournie par emsfp. Cette valeur est
+#       assignée au champs dst_mac du payload envoyé au module.
+#
+# Utilisation
+#
+#   Ce playbook puise les valeurs à configurer dans un csv comportant les colonnes suivantes:
+#     "#, FlowType, Flow, label_suf, src_udp_port, dst_udp_port, dst_mac, vlan_tag, pkt_filter_src_ip, pkt_filter_src_udp,
+#      pkt_filter_src_mac, pkt_filter_dst_ip, pkt_filter_dst_udp, pkt_filter_dst_mac, pkt_filter_vlan, pkt_filter_ssrc,
+#      ssrc, gmp_src_ip, sender_type, enable"
+#
+#   Le csv contenant les valeurs à programmer doit être (par défaut) déposé à l'endroit suivant: "csv/config-file.csv".
+#   Le playbook peut ensuite être exécuté avec la commande suivante:
+#     `ansible-playbook [nom du playbook] -i inventaire/[chemin du fichier d'inventaire] -l [machine ou groupe cible] -v`
+#
+# Copyright: (c) 2018, Société Radio-Canada>
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+#
+---
+- hosts: localhost
+  gather_facts: no
+  vars:
+    - var_ip_config_file: "csv/ip-config-file.csv"
+    - var_flows_config_file: "csv/flows-config-file.csv"
+    - ansible_python_interpreter: /usr/bin/env python
+
+  tasks:
+    - name: Parse ip-config-file.csv to ip_config.yml
+      template:
+        src: "templates/csv_to_yaml.j2"
+        dest: "vars/ip_config.yml"
+      vars: 
+        - csvfile: "{{ lookup('file', '{{ var_ip_config_file }}') }}"
+        - ansible_python_interpreter: /usr/bin/python
+      run_once: true
+      check_mode: no
+      changed_when: no
+
+    - name: Load ip_config.yml
+      include_vars: ip_config.yml
+      changed_when: no
+    
+    - name: Parse flows-config-file.csv to flows_config.yml.
+      template:
+        src: "templates/csv_to_yaml_flows_v2.j2"
+        dest: "vars/flows_config.yml"
+      vars: 
+        - csvfile: "{{ lookup('file', '{{ var_flows_config_file }}') }}"
+        - ansible_python_interpreter: /usr/bin/python
+      run_once: true
+      check_mode: no
+      changed_when: no
+
+    - name: Load flows_config.yml
+      include_vars: flows_config.yml
+      changed_when: no
+
+    - name: loop over modules
+      include_tasks: embox-csv-flows-block.yml
+      loop: "{{modules}}"
+      loop_control:
+        loop_var: module_item

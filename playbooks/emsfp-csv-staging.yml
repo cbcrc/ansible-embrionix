@@ -2,11 +2,11 @@
 #
 # Description
 #
-#   Configuration des addresses réseau des modules emsfp 22 Embrionix par I2C (Addresse IP, le masque réseau et la passerelle par défault).
-#   Pour ce faire, on établi une connection ssh avec la switch arista dans laquelle se trouve les modules emsfp d'embrionix via le module
-#   ansible eos_command pour ensuite configurer le module via I2c sur le smbus corresondant.
-#   Dépendamment de ce qui est fourni dans le csv, la configuration peut être envoyée au port Ethernet spécifié ou au module emsfp 
-#   d'embrionix qui possède la mac adresse spécifiée et ce, peut importe le port ethernet dans lequel le module se trouve.
+#   Configuration des adresses réseau des modules emsfp 22 Embrionix par I2C (Addresse IP, le masque réseau et la passerelle par défault).
+#   Pour ce faire, on établis une connection ssh avec la switch arista dans laquelle se trouve les modules emsfp d'embrionix via le module
+#   ansible eos_command pour ensuite configurer le module via I2c sur le smbus correspondant.
+#   Dépendamment de ce qui est fournis dans le csv, la configuration peut être envoyée au port Ethernet spécifié ou au module emsfp 
+#   d'embrionix qui possède la mac address spécifiée et ce, peut importe le port ethernet dans lequel le module se trouve.
 #
 # Comment débuter
 #
@@ -59,10 +59,10 @@
       eos_command:
         commands: 
           - enable
-          - show platform smbus counters | sed '/Est. Tx/ q' | grep -B 1 '5.00'
+          - show platform smbus counters | sed '/Est. Tx/ q'
       register: smbusses
 
-    - name: Filter smbus return to create a dict of corresponding Ethernet port and SMBUS Adress.
+    - name: Filter smbus return to create a dict of corresponding Ethernet port and SMBUS Addresses.
       smbus_to_array:
         smbus: '{{ smbusses.stdout[1] }}'
       register: port_smbus_dict
@@ -209,7 +209,7 @@
       loop: "{{ range(reads_hex.results | length)|list }}"
       register : reads_dec
 
-    - name: Check the if the Network Adresses has been changed.
+    - name: Check if the Network Adresses has been changed.
       check_changed_ips:
         read_ip_addr: "{{ reads_dec.results[item|int].msg.converted_value.ip_addr }}"
         expected_ip_addr: "{{ modules[item|int].ip_addr }}"

@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
+#
 # Copyright: (c) 2018, Société Radio-Canada>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
-
+#
+from ipaddress import IPv4Address, IPv4Network, AddressValueError, NetmaskValueError
+from module_utils.emsfp import EMSFP
 from ansible.module_utils.basic import AnsibleModule
-from module_utils import emsfp_base
-from yaml import dump
+from ansible.module_utils.utils import get_module_type2
 
 ANSIBLE_METADATA = {'metadata_version': '1.0.0',
                     'status': ['preview'],
@@ -23,7 +24,7 @@ description:
 options:
 
 notes:
-
+    *** Part of this code whas provided by Embrionix.
 requirements:
 
 '''
@@ -44,21 +45,16 @@ status:
 
 '''
 
-# Verifie que les valeurs entrées sont de 0.0.0.0 à 255.255.255.255.
-IP_ADDRESS_REGEX = "^(([01]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5]).([01]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5]).([01]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5]).([01]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5]))$"
-HOSTNAME_REGEX = "^[-\s\w\W]*$"
-
-PAYLOAD_TEMPLATE = {
-
-}
-
 def main():
     module = AnsibleModule(
-        argument_spec=dict(),
+        argument_spec=dict(
+            ip_addr=dict(type='str', required=True)
+        ),
         supports_check_mode=True,
     )
 
-    url = f"http://{emsfp_base.EMSFP.clean_ip(module.params['ip_addr'])}/emsfp/node/v1/self/ipconfig/"
+    module_type = get_module_type2(module.params['ip_addr'])
+    module.exit_json(changed=False, msg=f"Module type: {module_type}", type=module_type)
 
-    emsfp_module = emsfp_base.EMSFP(url, module.params, PAYLOAD_TEMPLATE)
-    module_inital_config = emsfp_module.get_module_config
+if __name__ == "__main__":
+    main()

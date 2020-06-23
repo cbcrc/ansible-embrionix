@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
+#
 # Copyright: (c) 2018, Société Radio-Canada>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
-
+#
+from ipaddress import IPv4Address,IPv4Network
 from ansible.module_utils.basic import AnsibleModule
-from module_utils import emsfp
+from module_utils.emsfp import EMSFP
+from module_utils.utils import configure_em_device
 from yaml import dump
 from re import fullmatch
 
@@ -59,42 +61,30 @@ def main():
         argument_spec=dict(
             ip_addr=dict(type='str', required=True),
             reference_clock_id=dict(type='str', required=True),
-            domain_num=dict(type='str'),
-            vlan_id=dict(type='str'),
-            dscp=dict(type='str'),
+            domain_num=dict(type='int'),
+            vlan_id=dict(type='int'),
+            dscp=dict(type='int'),
             ),
             supports_check_mode=True, 
         )
+
+    payload_params = {
+    "domain_num": module.params['domain_num'],
+    "vlan_id": module.params['vlan_id'],
+    "dscp": module.params['dscp']
+    }
 
     if not fullmatch(REF_CLOCK_ID, module.params['reference_clock_id']):
         error_msg = f"reference_clock_id \'{module.params['reference_clock_id']}\' est invalide selon le regex: {REF_CLOCK_ID}"
         module.fail_json(changed=False, msg=error_msg)
 
-    url = f"http://{emsfp.EMSFP.clean_ip(module.params['ip_addr'])}/emsfp/node/v1/refclk/{module.params['reference_clock_id']}/"
+    url = f"http://{IPv4Address(module.params['ip_addr'])}/emsfp/node/v1/refclk/{module.params['reference_clock_id']}/"
 
-    sfp_module = emsfp.EMSFP(url, module.params, PAYLOAD_TEMPLATE)
-    module_inital_config = sfp_module.get_module_config
+    # em = EMSFP(url, module.params, PAYLOAD_TEMPLATE)
+    em = EMSFP(url, payload_params, PAYLOAD_TEMPLATE)
+    module_inital_config = em.target_config
 
-    # Pousser la nouvelle config si elle est différente de la config du module
-    try:
-        inital_comp = sfp_module.get_config_diff
-    except KeyError as e:
-        module.fail_json(changed=False, msg=f"{e}")
-    else:
-        if inital_comp:
-            if not module.check_mode:
-                try:
-                    response_message = sfp_module.send_configuration()
-                except Exception as e:
-                    error_msg = f"{e}, args: {e.args}"
-                    module.fail_json(changed=False, msg=error_msg)
-                else:
-                    module.exit_json(changed=True, msg=f"{response_message}")
-            else:
-                module.exit_json(changed=True, msg=f"Values that would be modified (check_mode):", values=dump(inital_comp, default_flow_style=False))
-        # Le payload == response, pas besoin d'en faire plus
-        else:
-            module.exit_json(changed=False, msg=f"Nothing to change: \n{dump(module_inital_config, default_flow_style=False)}")
+    configure_em_device(module, em)
 
 if __name__ == '__main__':
     main() 

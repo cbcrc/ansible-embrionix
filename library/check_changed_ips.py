@@ -1,20 +1,24 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
+#
 # Copyright: (c) 2018, Société Radio-Canada>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+#
+from ipaddress import IPv4Address,IPv4Network
+from ansible.module_utils.basic import AnsibleModule
 
-from ansible.module_utils.basic import *
 from yaml import dump
 
 
 def check_ips(compare_dict):
     msg = ""
     for key, value in compare_dict.items():
-        temp = value[1].split(".")
-        temp[len(temp) - 1] = temp[len(temp) - 1].lstrip("0")
-        value[1] = '.'.join(temp)     
-        if value[0] != value[1]:
+        #Clean Network adresses before comparaison
+        module = IPv4Address(value['module'])
+        expected = IPv4Address(value['expected'])
+
+        #Compare network adresses
+        if module != expected:
             msg += f" The network address {key} on the module is different from what's expected."
     return msg
 
@@ -32,11 +36,11 @@ def main():
         supports_check_mode=True,
     )
 
-    compare_dict = {
-        'ip_addr': [module.params['read_ip_addr'], module.params['expected_ip_addr']],
-        'subnet_mask': [module.params['read_subnet_mask'], module.params['expected_subnet_mask']],
-        'gateway': [module.params['read_gateway'], module.params['expected_gateway']]
-    }
+    compare_dict = { 
+        'ip_addr': {'module': module.params['read_ip_addr'], 'expected': module.params['expected_ip_addr']},
+        'subnet_mask': {'module': module.params['read_subnet_mask'],'expected': module.params['expected_subnet_mask']}, 
+        'gateway': {'module': module.params['read_gateway'], 'expected': module.params['expected_gateway']}
+        }
 
     response = check_ips(compare_dict)
 

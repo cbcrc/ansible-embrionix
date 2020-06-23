@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
+#
 # Copyright: (c) 2018, Société Radio-Canada>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
-
+#
+from ipaddress import IPv4Address,IPv4Network
 from ansible.module_utils.basic import AnsibleModule
-from module_utils import emsfp
+from module_utils.emsfp import EMSFP
+from module_utils.utils import configure_em_device
 from yaml import dump
 from re import fullmatch
 
@@ -62,21 +64,29 @@ def main():
     module = AnsibleModule(
         argument_spec=dict(
             ip_addr=dict(type='str', required=True),
-            module_type=dict(type='str', choices=["enc", "dec"]),
+            module_type=dict(type='str', required=True),
             sdi_channel_id=dict(type='str', required=True),
-            frame_sync=dict(type='bool'),
-            offset_mode=dict(type='bool'),
-            usec_offset=dict(type='str'),
-            v_offset=dict(type='str'),
-            h_offset=dict(type='str')
+            frame_sync=dict(type='bool', required=False),
+            offset_mode=dict(type='bool', required=False),
+            usec_offset=dict(type='str', required=False),
+            v_offset=dict(type='str', required=False),
+            h_offset=dict(type='str', required=False)
             ),
             supports_check_mode=True, 
         )
 
     channel_type = ""
-    if module.params['module_type'] == 'enc':
+    # if module.params['module_type'] in ['encap', 'enc']:
+    #     channel_type = "sdi_input"
+    # elif module.params['module_type'] in ['decap', 'dec']:
+    #     channel_type = "sdi_output"
+    if (
+        module.params['module_type'] in ['encap', 'enc', "st2110_10G_enc"]) or (
+        module.params['module_type'] in ['box3u_25G', 'Embox6_8'] and module.params['sdi_channel_id'][:1] in ['b0', 'b2', 'b4', 'b6']):
         channel_type = "sdi_input"
-    elif module.params['module_type'] == 'dec':
+    elif (
+        module.params['module_type'] in ['decap', 'dec' "st2110_10G_dec"]) or (
+        module.params['module_type'] in ['box3u_25G', 'Embox6_8'] and module.params['sdi_channel_id'][:1] in ['b1', 'b3', 'b5', 'b7']):
         channel_type = "sdi_output"
     else:
         error_msg = f"\'{module.params['module_type']}\' isn't a valid sfp module type."
@@ -86,30 +96,21 @@ def main():
         error_msg = f"sdi_channel_id \'{module.params['sdi_channel_id']}\' est invalide selon le regex: {SDI_CHANNEL_ID}"
         module.fail_json(changed=False, msg=error_msg)
 
-    url = f"http://{emsfp.EMSFP.clean_ip(module.params['ip_addr'])}/emsfp/node/v1/{channel_type}/{module.params['sdi_channel_id']}/"
+    url = f"http://{IPv4Address(module.params['ip_addr'])}/emsfp/node/v1/{channel_type}/{module.params['sdi_channel_id']}/"
 
-    sfp_module = emsfp.EMSFP(url, module.params, PAYLOAD_TEMPLATE)
-    module_inital_config = sfp_module.get_module_config
+    payload_params = {
+        'line_offset': {
+            'frame_sync': module.params['frame_sync'],
+            'offset_mode': module.params['offset_mode'],
+            'usec_offset': module.params['usec_offset'],
+            'v_offset': module.params['v_offset'],
+            'h_offset': module.params['h_offset']
+            }
+        }
 
-    # Pousser la nouvelle config si elle est différente de la config du module
-    try:
-        inital_comp = sfp_module.get_config_diff
-    except KeyError as e:
-        module.fail_json(changed=False, msg=f"{e}")
-    else:
-        if inital_comp:
-            if not module.check_mode:
-                try:
-                    response_message = sfp_module.send_configuration()
-                except Exception as e:
-                    module.fail_json(changed=False, msg=f"{e}")
-                else:
-                    module.exit_json(changed=True, msg=f"{response_message}")
-            else:
-                module.exit_json(changed=True, msg=f"Values that would be modified (check_mode):", values=dump(inital_comp, default_flow_style=False))
-        # Le payload == response, pas besoin d'en faire plus
-        else:
-            module.exit_json(changed=False, msg=f"Nothing to change: \n{dump(module_inital_config, default_flow_style=False)}")
+    em = EMSFP(url, payload_params, PAYLOAD_TEMPLATE)
+
+    configure_em_device(module, em)
 
 if __name__ == '__main__':
     main() 

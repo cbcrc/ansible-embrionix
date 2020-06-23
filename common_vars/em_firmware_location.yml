@@ -1,0 +1,30 @@
+---
+# Maven2 group_id pour aci_firmware_source
+box3f_group_id: "Embrionix.box3f.firmwares"
+box3u_10G_group_id: "Embrionix.box3u.10G.firmwares"
+box3u_25G_group_id: "Embrionix.box3u.25G.firmwares"
+box6_6_10G_group_id: "Embrionix.box6.6.10G.firmwares"
+box6_8_10G_group_id: "Embrionix.box6.8.10G.firmwares"
+box6_6_25G_group_id: "Embrionix.box6.6.25G.firmwares"
+box6_8_25G_group_id: "Embrionix.box6.8.25G.firmwares"
+st2110_10G_enc_group_id: "Embrionix.st2110.10G.enc.firmwares"
+st2110_10G_dec_group_id: "Embrionix.st2110.10G.dec.firmwares"
+st2110_uhd_enc_group_id: "Embrionix.st2110.uhd.enc.firmwares"
+st2110_uhd_dec_group_id: "Embrionix.st2110.uhd.dec.firmwares"
+st2022_6_enc: "Embrionix.st2022-6.enc.firmwares"
+st2022_6_dec: "Embrionix.st2022-6.dec.firmwares"
+
+# Firmwares info for Nexus Repository module
+firmware_infos:
+  FIR-E112PLD06-1ch-1.0.992:
+    type: box3f
+    group_id: "{{box3f_group_id}}"
+    artifact_id: FIR-E112PLD06-1ch
+    version: 1.0.992
+    location: https://hosted.somewhere
+  PLD-112-10G-BOX3-U-2G-2110-E-2.5.1576007833:
+    type: box3u_10G
+    group_id: "{{box3u_10G_group_id}}"
+    artifact_id: PLD-112-10G-BOX3-U-2G-2110-E
+    version: 2.5.1576007833
+    location: https://hosted.somewhere

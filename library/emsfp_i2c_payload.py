@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
+#
 # Copyright: (c) 2018, Société Radio-Canada>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
-
-from ansible.module_utils.basic import *
+#
+from ansible.module_utils.basic import AnsibleModule
 
 def port_build_dict(smbus_addresses, port_number, source_payload_dict):
     try:
@@ -22,10 +22,10 @@ def port_build_dict(smbus_addresses, port_number, source_payload_dict):
             payload_dict[key + '_' + "third"] = separated_bytes_list[2]
             payload_dict[key + '_' + "fourth"] = separated_bytes_list[3]
 
-    except:
-        payload_dict = {}
-        payload_dict['error'] = 'Error creating the payload.'
-        return payload_dict   
+    except Exception as e:
+        payload_error = {}
+        payload_error['error'] = f'Error creating the payload. Message: {e}\nPayload_dict: {payload_dict}\n'
+        return payload_error   
     return payload_dict
 
 def mac_build_dict(mac_smbus_correspondance, mac_address, source_payload_dict):
@@ -72,12 +72,12 @@ def main():
     if module.params['mac_smbus_correspondance'] == [] :
         converted_dict = port_build_dict(module.params['smbus_addresses'], module.params['port_number'], source_payload_dict )
         if 'error' in converted_dict:
-            module.fail_json(changed=False, msg=f"{converted_dict['error']} module ip : {module.params['ip_addr']}.")
+            module.fail_json(changed=False, msg=f"Port {module.params['port_number']}: {converted_dict['error']} module ip : {module.params['ip_addr']}.\nsource_payload_dict: {source_payload_dict}")
         module.exit_json(changed=False, msg=converted_dict)
     else:
         converted_dict = mac_build_dict(module.params['mac_smbus_correspondance'], module.params['mac_address'], source_payload_dict)
         if 'error' in converted_dict:
-            module.fail_json(changed=False, msg=f"{converted_dict['error']} - MAC Address : {module.params['mac_address']}.")
+            module.fail_json(changed=False, msg=f"MAC {module.params['mac_address']}: {converted_dict['error']} - MAC Address : {module.params['mac_address']}.\nsource_payload_dict: {source_payload_dict}")
         module.exit_json(changed=False, msg=converted_dict)
 
 

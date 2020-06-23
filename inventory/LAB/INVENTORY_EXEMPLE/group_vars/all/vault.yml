@@ -1,0 +1,1 @@
+# All variables with vault_ prefix should be put in a encrypted Ansible vault file and put here. 

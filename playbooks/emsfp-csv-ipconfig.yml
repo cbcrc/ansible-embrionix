@@ -1,5 +1,9 @@
-# Valid csv columns:
-#   ip_addr,subnet_mask,gateway,hostname,port,dhcp_enable,alias_ip,alias_ip_subnet,ctl_vlan_id,ctl_vlan_pcp,ctl_vlan_enable
+# Playbook emsfp-csv-ipconfig.yml
+#
+# This playbook configures ip parameters from values provided by a csv.
+#
+# Required csv columns:
+# ip_addr,subnet_mask,gateway,hostname,port,dhcp_enable,alias_ip,alias_ip_subnet,ctl_vlan_id,ctl_vlan_pcp,ctl_vlan_enable
 #
 # Copyright: (c) 2018, Société Radio-Canada>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
@@ -33,9 +37,24 @@
     #     msg: "{{ modules_ipconfig_payload }}"
 
     - name: Pousser la configuration
-      emsfp_ipconfig:
-        ip_addr: "{{ item.ip_addr }}"
-        hostname: "{{ item.hostname }}"
-        dhcp_enable: "{{ item.dhcp_enable }}"
-        ctl_vlan_id: "{{ item.ctl_vlan_id }}"
+      block:
+        emsfp_ipconfig:
+          ip_addr: "{{ item.ip_addr }}"
+          hostname: "{{ item.hostname }}"
+          dhcp_enable: "{{ item.dhcp_enable }}"
+          ctl_vlan_id: "{{ item.ctl_vlan_id }}"
+        register: result
+        retries: 3
+        delay: 1
+        until: result is succeeded
+        # register: sortie
+        delegate_to: localhost
       loop: "{{ modules }}"
+
+
+
+    # - debug: 
+    #     msg: "{{ sortie.stdout_lines }}"
+
+    # - debug: 
+    #     msg: "{{ sortie.stderr_lines }}"

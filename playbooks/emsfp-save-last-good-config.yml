@@ -1,0 +1,37 @@
+# Playbook emsfp-save-last-good-config.yml
+#
+# This playbook download the device configuration parameters and creates a last-good-configuration-[hostname].yml file form the device configuration parameters.
+#
+# Copyright: (c) 2018, Société Radio-Canada>
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+#
+---
+- import_playbook: emsfp-config-download-v2.yml
+
+- hosts: emsfp
+  gather_facts: no
+  vars_files:
+    - ../all/all.yml
+  vars:
+    - ansible_python_interpreter: "/usr/bin/env python"
+
+  tasks:
+    - name: create reachable_hosts group.
+      import_tasks: snippets/snippet-list-reachable-hosts.yml
+
+    - block:
+      - name: Make sure last-good-configuration path exists
+        file: 
+          path: "{{ inventory_dir }}/last-good-configuration/"
+          state: directory
+          recurse: yes
+        delegate_to: localhost 
+      
+      - name: Copy host vars of host to last-good-configuration folder of inventory for "{{ hostvars[inventory_hostname].ansible_host_ip }}"
+        copy:
+          src: "vars/values_read_from_module_{{ hostvars[inventory_hostname].ansible_host_ip }}.yml"
+          dest: "{{ inventory_dir }}/last-good-configuration/{{ hostvars[inventory_hostname].inventory_hostname }}.yml"
+        delegate_to: localhost 
+        register: ansible_host_result
+
+      when: "'reachable_hosts' in group_names"

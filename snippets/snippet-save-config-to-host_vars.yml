@@ -1,0 +1,28 @@
+# snippet-save-config-to-host_vars.yml
+#
+# This tasks snippet is used by playbooks to first download Embrionix device configuration and then write it
+# in a host_vars file.
+#
+# Copyright: (c) 2018, Société Radio-Canada>
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+#
+---
+- name: Download module configs
+  include_tasks: snippets/snippet-config-download.yml
+
+- name: Make sure host_vars path exists
+  file: 
+    path: "{{ inventory_dir }}/host_vars/"
+    state: directory
+    recurse: yes
+  delegate_to: localhost
+  tags: always
+
+- name: Copy host vars of host to host_vars folder of inventory for "{{ hostvars[inventory_hostname].ansible_host_ip }}"
+  copy:
+    src: "vars/values_read_from_module_{{ hostvars[inventory_hostname].ansible_host_ip }}.yml"
+    dest: "{{ inventory_dir }}/host_vars/{{ hostvars[inventory_hostname].inventory_hostname }}.yml"
+    force: yes
+  delegate_to: localhost 
+  register: ansible_host_result
+  tags: always

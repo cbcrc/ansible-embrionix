@@ -1,0 +1,22 @@
+# Playbook emsfp-sdi-audio-output.yml
+#
+# This playbook configures sdi audio output parameters from inventory values.
+#
+# Copyright: (c) 2018, Société Radio-Canada>
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+#
+---
+- hosts: emsfp
+  gather_facts: no
+  vars_files:
+    - ../all/all.yml
+  vars:
+    - ansible_python_interpreter: "/usr/bin/env python"
+
+  tasks:
+    - name: create reachable_hosts group.
+      import_tasks: snippets/snippet-list-reachable-hosts.yml
+
+    - name: Configurer sdi audio output
+      import_tasks: snippets/snippet-sdi-audio-output.yml
+      when: "'reachable_hosts' in group_names"

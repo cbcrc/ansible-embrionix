@@ -1,0 +1,30 @@
+# Playbook list-reachable-hosts.yml
+#
+# This playbook test if a host is reachable and add them to a reachable_hosts group if they are. 
+#
+# Copyright: (c) 2018, Société Radio-Canada>
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+#
+---
+  - name: identify reachable hosts
+    hosts: all
+    gather_facts: no
+    become: no
+    vars:
+      ansible_connection: local
+    tasks:
+      - import_tasks: snippets/snippet-list-reachable-hosts.yml
+
+  - name: list reachable hosts
+    hosts: all:&reachable_hosts
+    gather_facts: no
+    tasks:
+      - debug:
+            msg: "{{ inventory_hostname }} is reachable"
+
+  - name: list unreachable hosts
+    hosts: all:!reachable_hosts
+    gather_facts: no
+    tasks:
+      - debug:
+            msg: "{{ inventory_hostname }} is unreachable"

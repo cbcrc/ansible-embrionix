@@ -1,11 +1,24 @@
+# Playbook emsfp-csv-ptp.yml
+#
+# This playbook configures ptp parameters from values provided by a csv.
+#
+# Required csv columns:
+# ip_addr,PTP_mode, ManualMode, PTP_domain_nb, PTP_VlanID, PTP_dscp
+#
+# These values must exists in the inventory:
+# - emsfp_refclk_1
+# - emsfp_refclk_2
+#
 # Copyright: (c) 2018, Société Radio-Canada>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 #
 ---
 - hosts: localhost
   gather_facts: no
+  vars_files:
+    - ../all/all.yml
   vars:
-    - ansible_python_interpreter: "{{ lookup('env','VIRTUAL_ENV') }}/bin/python"
+    - ansible_python_interpreter: "/usr/bin/env python"
     - var_file: "csv/config-file.csv"
 
   tasks:
@@ -27,20 +40,29 @@
       changed_when: no
 
     - name: Pousser la configuration pour refclk
-      emsfp_refclk_id:
-        ip_addr: "{{ ipconfig.ip_addr }}"
-        reference_clock_id: "{{ item.reference_clock_id }}"
+      emsfp_refclk:
+        ip_addr: "{{ item.ip_addr }}"
         mode: "{{ item.PTP_mode }}"
         manual_ctrl: "{{ item.ManualMode }}"
-      loop: "{{ reference_clocks }}"
-      connection: local
+      loop: "{{ modules }}"
+      delegate_to: localhost
 
-    - name: Pousser la configuration pour refclk_id
+    - name: Pousser la configuration pour refclk_id 1
       emsfp_refclk_id:
-        ip_addr: "{{ ipconfig.ip_addr }}"
-        reference_clock_id: "{{ item.reference_clock_id }}"
+        ip_addr: "{{ item.ip_addr }}"
+        reference_clock_id: "{{ emsfp_refclk_1 }}"
         domain_num: "{{ item.PTP_domain_nb }}"
         vlan_id: "{{ item.PTP_VlanID }}"
         dscp: "{{ item.PTP_dscp }}"
-      loop: "{{ reference_clocks }}"
-      connection: local
+      loop: "{{ modules }}"
+      delegate_to: localhost
+
+    - name: Pousser la configuration pour refclk_id 2
+      emsfp_refclk_id:
+        ip_addr: "{{ item.ip_addr }}"
+        reference_clock_id: "{{ emsfp_refclk_2 }}"
+        domain_num: "{{ item.PTP_domain_nb }}"
+        vlan_id: "{{ item.PTP_VlanID }}"
+        dscp: "{{ item.PTP_dscp }}"
+      loop: "{{ modules }}"
+      delegate_to: localhost

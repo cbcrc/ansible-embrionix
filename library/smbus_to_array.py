@@ -1,35 +1,45 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
+#
 # Copyright: (c) 2018, Société Radio-Canada>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
-
-from ansible.module_utils.basic import *
+#
+from ansible.module_utils.basic import AnsibleModule
 import json, yaml
 
-def find_addresses(smbus):
-    smbus_addresses = []
-    ethernet_ports = []
+def remove_redundant_spaces(intput_string):
+    output_string = ''
+    last_space = False
+    for c in intput_string:
+        if c == ' ':
+            last_space = True
+        else:
+            if last_space:
+                output_string = output_string + ' '
+            output_string = output_string + c
+            last_space = False
+    return output_string
 
-    #Count number of Ethernet iteration (number of module)
-    number_of_module = smbus.count('Ethernet')
+def find_addresses(smbus):
+
+    line_list = []
+    smbus_devices = []
+    ethernet_ports = []
     port_smbus_dict = {}
 
-    for module in range(0 ,number_of_module):
-        try:
-            start_address_string = smbus[smbus.find('Ethernet'):]
-            address_string = start_address_string[:start_address_string.find('5.00')]
-            address_list = address_string.split(' ')
-            filtered_address_list = list(filter(None, address_list)) # Remove None item of the list
-            smbus = start_address_string[30:]
-            port_smbus_dict[int(filtered_address_list[0][8:])] = filtered_address_list[4]
-
-        except:
-            port_smbus_dict = {}
-            port_smbus_dict['error'] = 'Error parsing the smbus return.'
-            return port_smbus_dict        
+    for line in smbus.splitlines():
+        temp_line = remove_redundant_spaces(line)
+        line_list = temp_line.split(' ')
+        if line_list[0].startswith('Ethernet'):
+            ethernet_ports.append(line_list)
+        elif line_list[0].startswith('SmbusDevice') and line_list[3] == '5.00':
+            smbus_devices.append(line_list)
+    
+    for device in smbus_devices:
+        for port in ethernet_ports:
+            if device[1][:5] == port[1][:5]:
+                port_smbus_dict.update({port[0].strip('Ethernet'): device[1]})
     return port_smbus_dict
-
 
 def main():
     module = AnsibleModule(

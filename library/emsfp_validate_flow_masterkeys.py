@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
+#
 # Copyright: (c) 2018, Société Radio-Canada>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
-
-from ansible.module_utils.basic import *
+#
+from ansible.module_utils.basic import AnsibleModule
 import json
 
 def main():
@@ -17,7 +17,6 @@ def main():
         ),
         supports_check_mode=True
     )
-
 
     flag_payload_validity = True
     for key, value in module.params.items():

@@ -1,0 +1,49 @@
+# snippet-ptp.yml
+#
+# This tasks snippet is used by playbooks to upload Embrionix device ptp configuration.
+#
+# Copyright: (c) 2018, Société Radio-Canada>
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+#
+---
+- name: Pousser la configuration pour refclk
+  emsfp_refclk:
+    ip_addr: "{{ hostvars[inventory_hostname].ansible_host_ip }}"
+    mode: "{{ embrionix_module.parameters.refclk.mode }}"
+    manual_ctrl: "{{ embrionix_module.parameters.refclk.manual_ctrl }}"
+  when: embrionix_module.parameters is defined
+  delegate_to: localhost
+  tags: always
+
+- name: Pousser la configuration pour refclk
+  emsfp_refclk:
+    ip_addr: "{{ hostvars[inventory_hostname].ansible_host_ip }}"
+    mode: "{{ emsfp_module.parameter.ptp.mode }}"
+    manual_ctrl: "{{ emsfp_module.parameter.ptp.manual_ctrl }}"
+  when: emsfp_module.parameter is defined
+  delegate_to: localhost
+  tags: always
+
+- name: Pousser la configuration pour refclk_id
+  emsfp_refclk_id:
+    ip_addr: "{{ hostvars[inventory_hostname].ansible_host_ip }}"
+    reference_clock_id: "{{ item.key }}"
+    domain_num: "{{ item.value.domain_num }}"
+    vlan_id: "{{ item.value.vlan_id }}"
+    dscp: "{{ item.value.dscp }}"
+  loop: "{{ embrionix_module.parameters.refclk.uuid | default({}) | dict2items }}"
+  when: embrionix_module.parameters is defined
+  delegate_to: localhost
+  tags: always
+
+- name: Pousser la configuration pour refclk_id
+  emsfp_refclk_id:
+    ip_addr: "{{ hostvars[inventory_hostname].ansible_host_ip }}"
+    reference_clock_id: "{{ item.key }}"
+    domain_num: "{{ item.value.domain_num }}"
+    vlan_id: "{{ item.value.vlan_id }}"
+    dscp: "{{ item.value.dscp }}"
+  loop: "{{ emsfp_module.parameter.get('ptp-uuid') | default({}) | dict2items }}"
+  when: emsfp_module.parameter is defined
+  delegate_to: localhost
+  tags: always

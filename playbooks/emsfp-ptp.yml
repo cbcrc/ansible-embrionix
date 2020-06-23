@@ -1,28 +1,22 @@
+# Playbook emsfp-ptp.yml
+#
+# This playbook configures ptp parameters from inventory values.
+#
 # Copyright: (c) 2018, Société Radio-Canada>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 #
 ---
-- hosts: all
+- hosts: emsfp
   gather_facts: no
+  vars_files:
+    - ../all/all.yml
   vars:
-    - ansible_python_interpreter: "{{ lookup('env','VIRTUAL_ENV') }}/bin/python"
+    - ansible_python_interpreter: "/usr/bin/env python"
 
-  tasks: 
-    - name: Pousser la configuration pour refclk
-      emsfp_refclk_id:
-        ip_addr: "{{ ipconfig.ip_addr }}"
-        reference_clock_id: "{{ item.reference_clock_id }}"
-        mode: "{{ item.PTP_mode }}"
-        manual_ctrl: "{{ item.ManualMode }}"
-      loop: "{{ reference_clocks }}"
-      connection: local
+  tasks:
+    - name: create reachable_hosts group.
+      import_tasks: snippets/snippet-list-reachable-hosts.yml
 
-    - name: Pousser la configuration pour refclk_id
-      emsfp_refclk_id:
-        ip_addr: "{{ ipconfig.ip_addr }}"
-        reference_clock_id: "{{ item.reference_clock_id }}"
-        domain_num: "{{ item.PTP_domain_nb }}"
-        vlan_id: "{{ item.PTP_VlanID }}"
-        dscp: "{{ item.PTP_dscp }}"
-      loop: "{{ reference_clocks }}"
-      connection: local
+    - name: Configure ptp
+      import_tasks: snippets/snippet-ptp.yml
+      when: "'reachable_hosts' in group_names"

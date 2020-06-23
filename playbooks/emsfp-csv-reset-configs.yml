@@ -1,5 +1,9 @@
-# Valid csv columns:
-#   Target,reboot,config_reset
+# Playbook emsfp-reset-configs.yml
+#
+# This playbook resets the devices configurations usings values provided by a csv.
+#
+# Required csv columns:
+# Target,reboot, config_reset
 #
 # Copyright: (c) 2018, Société Radio-Canada>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)

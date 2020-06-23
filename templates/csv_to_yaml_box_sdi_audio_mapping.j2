@@ -1,0 +1,32 @@
+modules:
+{% set ns = namespace(ip = "") %}
+{% set title = csvfile.split("\n") %}
+{% set title = title[0].split(",") %}
+{% for item in csvfile.split("\n") %}
+{%   if loop.index != 1 %}
+{%     set values = item.split(",") %}
+{% for x in title %}
+{% if x == 'ip_addr_red' %}
+{% set ns.ip = values[loop.index - 1 ]|trim() %}
+{% else %}
+{% if x.endswith('AudMap') %}
+  - "ip_addr": "{{ ns.ip }}"
+{% if x ==  'SDI2_AudMap' %}
+    "sdi_channel_id": "b1d2da17-360a-4396-80a9-f620c4bb3885"
+{% elif x == 'SDI4_AudMap'%}
+    "sdi_channel_id": "b3d2da17-360a-4396-80a9-f620c4bb3885"
+{% elif x == 'SDI6_AudMap'%}
+    "sdi_channel_id": "b5d2da17-360a-4396-80a9-f620c4bb3885"
+{% elif x == 'SDI8_AudMap'%}
+    "sdi_channel_id": "b7d2da17-360a-4396-80a9-f620c4bb3885"
+{% endif %}
+{% set channels = values[loop.index - 1 ]|trim() %}
+{% for ch in channels.split('|') %}
+{% set ch_kv = "sdi_ch" + (loop.index - 1)|string + '\": \"' + ch.partition(':')[2] %}
+    "{{ ch_kv }}"
+{% endfor %}
+{% endif %}
+{% endif %}
+{% endfor %}
+{% endif %}
+{% endfor %}

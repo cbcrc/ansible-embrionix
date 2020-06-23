@@ -1,0 +1,87 @@
+# snippet-frame-sync.yml
+#
+# This tasks snippet is used by playbooks to upload Embrionix device framesync configuration.
+#
+# Copyright: (c) 2018, Société Radio-Canada>
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+#
+---
+- name: Get module type
+  emsfp_get_type_2:
+    ip_addr: "{{ hostvars[inventory_hostname].ansible_host_ip }}"
+  register: module_info
+  delegate_to: localhost
+  tags: always
+
+- debug:
+    msg: "Le type: {{ module_info.type }}"
+  delegate_to: localhost
+  tags: always
+
+- name: Configure encap line_offset
+  emsfp_line_offset:
+    ip_addr: "{{ hostvars[inventory_hostname].ansible_host_ip }}"
+    module_type: "{{ module_info.type }}"
+    sdi_channel_id: "{{ item.key }}"
+    frame_sync: "{{ item.value.line_offset.frame_sync }}"
+    offset_mode: "{{ item.value.line_offset.offset_mode }}"
+    usec_offset: "{{ item.value.line_offset.usec_offset }}"
+    v_offset: "{{ item.value.line_offset.v_offset }}"
+    h_offset: "{{ item.value.line_offset.h_offset }}"
+  loop: "{{ embrionix_module.parameters.sdi_input | default({}) | dict2items }}"
+  when:
+    - module_info.type in ["st2110_10G_enc", "Embox6_8", "box3u_25G"]
+    - embrionix_module.parameters is defined
+  delegate_to: localhost
+  tags: always
+
+- name: Configure decap line_offset
+  emsfp_line_offset:
+    ip_addr: "{{ hostvars[inventory_hostname].ansible_host_ip }}"
+    module_type: "{{ module_info.type }}"
+    sdi_channel_id: "{{ item.key }}"
+    frame_sync: "{{ item.value.line_offset.frame_sync }}"
+    offset_mode: "{{ item.value.line_offset.offset_mode }}"
+    usec_offset: "{{ item.value.line_offset.usec_offset }}"
+    v_offset: "{{ item.value.line_offset.v_offset }}"
+    h_offset: "{{ item.value.line_offset.h_offset }}"
+  loop: "{{ embrionix_module.parameters.sdi_output | default({}) | dict2items }}"
+  when:
+    - module_info.type in ["st2110_10G_dec", "Embox6_8", "box3u_25G"]
+    - embrionix_module.parameters is defined
+  delegate_to: localhost
+  tags: always
+
+- name: Configure encap line_offset
+  emsfp_line_offset:
+    ip_addr: "{{ hostvars[inventory_hostname].ansible_host_ip }}"
+    module_type: "{{ module_info.type }}"
+    sdi_channel_id: "{{ item.key }}"
+    frame_sync: "{{ item.value.line_offset.frame_sync }}"
+    offset_mode: "{{ item.value.line_offset.offset_mode }}"
+    usec_offset: "{{ item.value.line_offset.usec_offset }}"
+    v_offset: "{{ item.value.line_offset.v_offset }}"
+    h_offset: "{{ item.value.line_offset.h_offset }}"
+  loop: "{{ emsfp_module.parameter.sdi_input | default({}) | dict2items }}"
+  when: 
+    - module_info.type in ["st2110_10G_enc", "Embox6_8", "box3u_25G"]
+    - emsfp_module.parameter is defined
+  delegate_to: localhost
+  tags: always
+
+- name: Configure decap line_offset
+  emsfp_line_offset:
+    ip_addr: "{{ hostvars[inventory_hostname].ansible_host_ip }}"
+    module_type: "{{ module_info.type }}"
+    sdi_channel_id: "{{ item.key }}"
+    frame_sync: "{{ item.value.line_offset.frame_sync }}"
+    offset_mode: "{{ item.value.line_offset.offset_mode }}"
+    usec_offset: "{{ item.value.line_offset.usec_offset }}"
+    v_offset: "{{ item.value.line_offset.v_offset }}"
+    h_offset: "{{ item.value.line_offset.h_offset }}"
+  loop: "{{ emsfp_module.parameter.sdi_output | default({}) | dict2items }}"
+  when: 
+    - module_info.type in ["st2110_10G_dec", "Embox6_8", "box3u_25G"]
+    - emsfp_module.parameter is defined
+  delegate_to: localhost
+  tags: always

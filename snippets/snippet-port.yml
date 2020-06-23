@@ -1,0 +1,16 @@
+# snippet-port.yml
+#
+# This tasks snippet is used by playbooks to upload Embrionix device port configuration.
+#
+# Copyright: (c) 2018, Société Radio-Canada>
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+#
+---
+  - name: Port parameter is configured
+    embox_port:
+      ip_addr: "{{ hostvars[inventory_hostname].ansible_host_ip }}"
+      port_id: "{{ item.key }}"
+      sfp_type: "{{ port_sfp_type }}"
+      host_pinout: "{{ port_host_pinout }}"
+    loop:  "{{ embrionix_module.parameters.port | default({}) | dict2items }}"
+    delegate_to: localhost

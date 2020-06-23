@@ -1,0 +1,2 @@
+# Fichier pour forcer git à garder le dossier pour les variables générées par l"exécution du playbook
+# This file's purpose is to ensure git keeps this folder. It's pupose is to host temporary generated files that won't be commited.

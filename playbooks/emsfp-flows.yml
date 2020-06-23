@@ -1,0 +1,33 @@
+# Playbook emsfp-config-upload-ve.yml
+#
+# Description
+#   Le playbook emsfp-config-upload-v2.yml vise à télécharger les configurations d'un module emsfp dans un fichier yaml.
+#
+# Utilisation
+#   Le playbook peut être exécuté avec la commande suivante:
+#     `ansible-playbook [nom du playbook] -i inventaire/[chemin du fichier d'inventaire] -l [machine ou groupe cible] -v`
+#
+# Destination du fichier YAML
+#
+#   Le fichier est créé dans le répertoire ./vars/ et la nomenclature est "value_read_from_module_XXX.XXX.XXX.XXX".
+#   Les X réprésentent l'adresse IP du module.
+#
+# Copyright: (c) 2018, Société Radio-Canada>
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+# Vraiment?
+#
+---
+- hosts: emsfp
+  gather_facts: no
+  vars_files:
+    - ../all/all.yml
+  vars:
+    - ansible_python_interpreter: "/usr/bin/env python"
+
+  tasks:
+    - name: create reachable_hosts group.
+      import_tasks: snippets/snippet-list-reachable-hosts.yml
+
+    - name: Configure flows
+      import_tasks: snippets/snippet-flows.yml
+      when: "'reachable_hosts' in group_names"

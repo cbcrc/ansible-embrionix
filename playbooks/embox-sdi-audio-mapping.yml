@@ -1,0 +1,17 @@
+# Playbook embox-sdi-audio-mapping.yml
+#
+# This playbook configures embox6 sdi audio mapping parameters from inventory values.
+#
+# Copyright: (c) 2018, Société Radio-Canada>
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+#
+---
+- hosts: localhost
+  gather_facts: no
+  vars:
+    - var_ip_config_file: "csv/ip-config-file.csv"
+    - ansible_python_interpreter: /usr/bin/env python
+
+  tasks:
+    - name: loop over modules
+      include_tasks: embox-sdi-audio-mapping-block.yml
