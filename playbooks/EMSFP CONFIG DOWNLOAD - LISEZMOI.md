@@ -55,6 +55,10 @@ Le fichier est créé dans le répertoire ./vars/ et la nomenclature est "value_
 
 ## License
 
-À déterminer - see the [LICENSE.md](LICENSE.md) file for details
+
+#### Copyright: (c) 2018, Société Radio-Canada>
+#### GNU General Public License v3.0+
+
+Voir le fichier [LICENSE.md](LICENSE.md) pour les détails.
 
 ## Remerciements
