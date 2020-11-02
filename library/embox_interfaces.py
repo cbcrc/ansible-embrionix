@@ -98,15 +98,6 @@ def main():
 
     em = EMSFP(url, payload_params, PAYLOAD_TEMPLATE)
 
-    # message = f"Params:\n{pprint(payload_params)}\nTemplate:\n{pprint(box.payload_template)}\nTarget config:\n{pprint(box.get_module_config)}\nDiff:\n{pprint(box.get_config_diff)}"
-    # message = "Params:\n{0}\nTemplate:\n{1}\nTarget config:\n{2}\nPayload values:\n{3}\nDiff:\n{4}\nPayload:\n{5}".format(
-    #     dump(box.payload_params, default_flow_style=False),
-    #     dump(box.payload_template, default_flow_style=False),
-    #     dump(box.target_config, default_flow_style=False),
-    #     dump(box.payload_values, default_flow_style=False),
-    #     dump(box.get_config_diff.get_unflattened_dict(), default_flow_style=False),
-    #     dump(box.payload, default_flow_style=False))
-
     configure_em_device(module, em, wait_for_device_reboot=25)
 
 if __name__ == '__main__':

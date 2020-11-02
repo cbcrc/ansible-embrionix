@@ -9,6 +9,14 @@ from module_utils.emsfp import EMSFP
 from module_utils.utils import configure_em_device
 from yaml import dump
 from ansible.module_utils.basic import AnsibleModule
+import logging
+from logging.handlers import RotatingFileHandler
+
+log_format = '%(asctime)-15s - %(name)s, %(lineno)d - %(levelname)s - %(message)s'
+logging.basicConfig(filename='logs/emsfp_ipconfig.log', filemode='a', format=log_format, level=logging.INFO)
+ipconfig_log = logging.getLogger('emsfp_ipconfig')
+handler = RotatingFileHandler('logs/emsfp_ipconfig.log', maxBytes=1024, backupCount=1)
+ipconfig_log.addHandler(handler)
 
 ANSIBLE_METADATA = {'metadata_version': '1.0.0',
                     'status': ['preview'],
@@ -68,11 +76,11 @@ def main():
             subnet_mask=dict(type='str', required=False),
             gateway=dict(type='str', required=False),
             hostname=dict(type='str', required=False),
-            port=dict(type='int', required=False),
-            dhcp_enable=dict(type='bool', required=False),
-            ctl_vlan_id=dict(type='int', required=False),
-            ctl_vlan_pcp=dict(type='int', required=False),
-            ctl_vlan_enable=dict(type='bool', required=False)
+            port=dict(type='str', required=False),
+            dhcp_enable=dict(type='str', required=False),
+            ctl_vlan_id=dict(type='str', required=False),
+            ctl_vlan_pcp=dict(type='str', required=False),
+            ctl_vlan_enable=dict(type='str', required=False)
             ),
         supports_check_mode=True,
     )
@@ -83,19 +91,15 @@ def main():
         module.fail_json(changed=False, msg=e)
 
     payload_params = {
-    'alias_ip': module.params['ip_addr'],
-    'alias_ip_subnet': module.params['alias_ip_subnet'],
-    'subnet_mask': module.params['subnet_mask'],
-    'gateway': module.params['gateway'],
-    'hostname': module.params['hostname'],
-    'ctl_vlan_enable': module.params['ctl_vlan_enable'],
-    'ctl_vlan_id': module.params['ctl_vlan_id'],
-    'ctl_vlan_pcp': module.params['ctl_vlan_pcp'],
-    'dhcp_enable': module.params['dhcp_enable'],
-    'port': module.params['port'],
+        'hostname': module.params['hostname'],
+        'ctl_vlan_enable': module.params['ctl_vlan_enable'],
+        'ctl_vlan_id': module.params['ctl_vlan_id'],
+        'ctl_vlan_pcp': module.params['ctl_vlan_pcp'],
+        'dhcp_enable': module.params['dhcp_enable'],
+        'port': module.params['port'],
     }
 
-    em = EMSFP(url, module.params, PAYLOAD_TEMPLATE)
+    em = EMSFP(url, payload_params)
 
     configure_em_device(module, em)
 

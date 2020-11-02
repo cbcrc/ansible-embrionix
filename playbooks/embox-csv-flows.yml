@@ -29,29 +29,21 @@
 - hosts: localhost
   gather_facts: no
   vars:
-    - var_ip_config_file: "csv/ip-config-file.csv"
-    - var_flows_config_file: "csv/flows-config-file.csv"
+    # - var_flows_config_file: "csv/config-file.csv"
     - ansible_python_interpreter: /usr/bin/env python
 
   tasks:
-    - name: Parse ip-config-file.csv to ip_config.yml
-      template:
-        src: "templates/csv_to_yaml.j2"
-        dest: "vars/ip_config.yml"
-      vars: 
-        - csvfile: "{{ lookup('file', '{{ var_ip_config_file }}') }}"
-        - ansible_python_interpreter: /usr/bin/python
-      run_once: true
-      check_mode: no
-      changed_when: no
+    - name: var_flows_config_file is defined
+      fail:
+        msg: "var_flows_config_file must be passed on as extra vars or be declared in the inventory."
+      when: var_flows_config_file is undefined
 
-    - name: Load ip_config.yml
-      include_vars: ip_config.yml
-      changed_when: no
+    - set_fact:
+        workflow_type: csv
     
     - name: Parse flows-config-file.csv to flows_config.yml.
       template:
-        src: "templates/csv_to_yaml_flows_v2.j2"
+        src: "templates/csv_to_yaml_flows_v3.j2"
         dest: "vars/flows_config.yml"
       vars: 
         - csvfile: "{{ lookup('file', '{{ var_flows_config_file }}') }}"
@@ -64,8 +56,12 @@
       include_vars: flows_config.yml
       changed_when: no
 
+    - name: create reachable_hosts group.
+      include_tasks: snippets/snippet-csv-list-reachable-hosts.yml
+
     - name: loop over modules
       include_tasks: embox-csv-flows-block.yml
-      loop: "{{modules}}"
+      loop: "{{modules_flows_config}}"
       loop_control:
         loop_var: module_item
+        index_var: flow_idx

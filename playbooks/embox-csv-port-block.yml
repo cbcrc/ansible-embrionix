@@ -1,0 +1,26 @@
+# Valid csv columns:
+# Ports_6u, Ports_3u
+#
+# Copyright: (c) 2018, Société Radio-Canada>
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+#
+---
+- name: Register box type
+  emsfp_get_type_2:
+    ip_addr: "{{ module_item.ip_addr }}"
+  delegate_to: localhost  
+  register: module_info
+
+- name: Configure ports from inventory
+  include_tasks: snippets/snippet-port.yml
+  loop: "{{ module_item.Ports_6u }}"
+  loop_control:
+    loop_var: port
+  when: module_info.type == "Embox6_8"
+
+- name: Configure ports from inventory
+  include_tasks: snippets/snippet-port.yml
+  loop: "{{ module_item.Ports_3u }}"
+  loop_control:
+    loop_var: port
+  when: module_info.type == "box3u_25G"

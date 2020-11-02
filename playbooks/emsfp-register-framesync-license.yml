@@ -1,0 +1,50 @@
+# Pour chacun des encodeurs sfp, un numéro de licence spécifique au module doit être assigné à 
+# la variable frame_sync_licence.
+#
+# Copyright: (c) 2018, Société Radio-Canada>
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+#
+---
+- hosts: emsfp
+  gather_facts: no
+  vars_files:
+    - common_vars/all/all.yml
+    - common_vars/framesync_licence.yml
+  vars:
+    - ansible_python_interpreter: "{{ lookup('env','VIRTUAL_ENV') }}/bin/python"
+
+  tasks:
+    - set_fact:
+        workflow_type: inventory
+
+    - name: create reachable_hosts group.
+      import_tasks: snippets/snippet-list-reachable-hosts.yml
+
+    - block:
+      - name: Obtenir le type de module
+        emsfp_get_type:
+          ip_addr: "{{ hostvars[inventory_hostname].ansible_host_ip }}"
+        register: get_type
+
+      - name: Find licence if available
+        set_fact:
+          frame_sync_licence: "{{  item.value }}"
+        loop: "{{ lookup('dict', licences_framesync) }}"
+        when:
+          - get_type.type == "encap"
+          - "emsfp_module.parameter.ipconfig.local_mac.upper() == item.key"
+
+      - debug:
+          msg: "Licence: {{ frame_sync_licence }}"
+        when: frame_sync_licence is defined
+
+      - name: Enregistrer la licence frame_sync
+        uri:
+          url: "http://{{ hostvars[inventory_hostname].ansible_host_ip }}/emsfp/node/v1/self/license/"
+          body: '{"feature": {"frame_sync": "{{frame_sync_licence}}"}}'
+          body_format: json
+          method: PUT
+        when:
+          - get_type.type == "encap"
+          - frame_sync_licence is defined
+      when: "'reachable_hosts' in group_names"

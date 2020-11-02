@@ -1,0 +1,32 @@
+modules:
+{% set ns = namespace(ip = "") %}
+{% set title = csvfile.split("\n") %}
+{% set title = title[0].split(",") %}
+{% for item in csvfile.split("\n") %}
+{%   if loop.index != 1 %}
+{%     set values = item.split(",") %}
+{% for x in title %}
+{% if x == 'ip_addr_red' %}
+  - "ip_addr": "{{ values[loop.index - 1 ]|trim()  }}"
+{% else %}
+{% if x.startswith('Ports') %}
+    "{{ x }}":
+{% set ports = values[loop.index - 1 ]|trim() %}
+{% for port in ports.split('|') %}
+{% for value in port.split(':') %}
+{% if loop.index == 1 %}
+      - "id": "{{ value }}"
+{% endif %}
+{% if loop.index == 2 %}
+        "sfp_type": "{{ value }}"
+{% endif %}
+{% if loop.index == 3 %}
+        "host_pinout": "{{ value }}"
+{% endif %}
+{% endfor %}
+{% endfor %}
+{% endif %}
+{% endif %}
+{% endfor %}
+{% endif %}
+{% endfor %}

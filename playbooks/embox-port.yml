@@ -9,15 +9,22 @@
 - hosts: emsfp
   gather_facts: no
   vars_files:
+      - common_vars/all/all.yml
       - common_vars/box/all.yml
   vars:
     - ansible_python_interpreter: /usr/bin/env python
 
   tasks:
-    - name: Port parameter is configured
-      embox_port:
+    - set_fact:
+        workflow_type: inventory
+
+    - name: Get module type
+      emsfp_get_type_2:
         ip_addr: "{{ hostvars[inventory_hostname].ansible_host_ip }}"
-        port_id: "all"
-        sfp_type: "{{ port_sfp_type }}"
-        host_pinout: "{{ port_host_pinout }}"
+      register: module_info
       delegate_to: localhost
+      tags: always
+
+    - name: Configure ports from inventory
+      include_tasks: snippets/snippet-port.yml
+      loop: "{{ embrionix_module.parameters.port | default({}) | dict2items }}"

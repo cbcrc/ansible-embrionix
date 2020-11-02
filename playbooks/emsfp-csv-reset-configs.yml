@@ -14,7 +14,10 @@
   vars:
     var_file: "csv/config-file.csv"
 
-  tasks: 
+  tasks:
+    - set_fact:
+        workflow_type: csv
+
     - name: Conversion CSV vers YML.
       template:
         src: "templates/csv_to_yaml.j2"
@@ -31,9 +34,13 @@
       check_mode: no
       changed_when: no
 
+    - name: create reachable_hosts group.
+      include_tasks: snippets/snippet-csv-list-reachable-hosts.yml
+
     - name: Le payload est envoyé au module.
       emsfp_reset_configs:
-        ip_addr: "{{ item.Target }}"
+        ip_addr: "{{ item.ip_addr }}"
         reboot: "{{ item.reboot }}"
         config_reset: "{{ item.config_reset }}"
       loop: '{{ modules }}'
+      when: item.ip_addr in reachable_hosts

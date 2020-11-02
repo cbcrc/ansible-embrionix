@@ -10,6 +10,7 @@ from module_utils.emsfp import EMSFP
 from module_utils.utils import configure_em_device
 from yaml import dump
 from re import fullmatch
+from requests import get, RequestException
 
 ANSIBLE_METADATA = {'metadata_version': '1.0.0',
                     'status': ['preview'],
@@ -47,7 +48,7 @@ status:
 
 '''
 
-SDI_CHANNEL_ID = "^b[0-1][0-9a-f]{6}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+SDI_CHANNEL_ID = "^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
 
 PAYLOAD_TEMPLATE = {
     "line_offset": {
@@ -66,8 +67,8 @@ def main():
             ip_addr=dict(type='str', required=True),
             module_type=dict(type='str', required=True),
             sdi_channel_id=dict(type='str', required=True),
-            frame_sync=dict(type='bool', required=False),
-            offset_mode=dict(type='bool', required=False),
+            frame_sync=dict(type='str', required=False),
+            offset_mode=dict(type='str', required=False),
             usec_offset=dict(type='str', required=False),
             v_offset=dict(type='str', required=False),
             h_offset=dict(type='str', required=False)
@@ -76,20 +77,35 @@ def main():
         )
 
     channel_type = ""
-    # if module.params['module_type'] in ['encap', 'enc']:
-    #     channel_type = "sdi_input"
-    # elif module.params['module_type'] in ['decap', 'dec']:
-    #     channel_type = "sdi_output"
+    payload_params = {}
     if (
         module.params['module_type'] in ['encap', 'enc', "st2110_10G_enc"]) or (
-        module.params['module_type'] in ['box3u_25G', 'Embox6_8'] and module.params['sdi_channel_id'][:1] in ['b0', 'b2', 'b4', 'b6']):
+        module.params['module_type'] in ['box3u_25G', 'Embox6_8'] and module.params['sdi_channel_id'][:2] in ['b0', 'b2', 'b4', 'b6']):
         channel_type = "sdi_input"
-    elif (
-        module.params['module_type'] in ['decap', 'dec' "st2110_10G_dec"]) or (
-        module.params['module_type'] in ['box3u_25G', 'Embox6_8'] and module.params['sdi_channel_id'][:1] in ['b1', 'b3', 'b5', 'b7']):
+        payload_params = {
+            'line_offset': {
+                'frame_sync': module.params['frame_sync'],
+                'offset_mode': module.params['offset_mode'],
+                'usec_offset': module.params['usec_offset'],
+                'v_offset': module.params['v_offset'],
+                'h_offset': module.params['h_offset']
+                }
+        }
+    elif (module.params['module_type'] in ['decap', 'dec', "st2110_10G_dec"]):
         channel_type = "sdi_output"
+        payload_params = {
+            'line_offset': {
+                'frame_sync': module.params['frame_sync'],
+                'offset_mode': module.params['offset_mode'],
+                'usec_offset': module.params['usec_offset'],
+                'v_offset': module.params['v_offset'],
+                'h_offset': module.params['h_offset']
+                }
+        }
+    elif module.params['module_type'] in ['box3u_25G', 'Embox6_8'] and module.params['sdi_channel_id'][:2] in ['b1', 'b3', 'b5', 'b7']:
+        module.exit_json(changed=False, msg=f"No frame_sync parameter on box SDI Output.")
     else:
-        error_msg = f"\'{module.params['module_type']}\' isn't a valid sfp module type."
+        error_msg = f"\'{module.params['module_type']}\' isn't a valid sfp module \'{module.params['sdi_channel_id'][:2]}\' doesn't match sdi channel id prefix."
         module.fail_json(changed=False, msg=error_msg)
 
     if not fullmatch(SDI_CHANNEL_ID, module.params['sdi_channel_id']):
@@ -98,17 +114,25 @@ def main():
 
     url = f"http://{IPv4Address(module.params['ip_addr'])}/emsfp/node/v1/{channel_type}/{module.params['sdi_channel_id']}/"
 
-    payload_params = {
-        'line_offset': {
-            'frame_sync': module.params['frame_sync'],
-            'offset_mode': module.params['offset_mode'],
-            'usec_offset': module.params['usec_offset'],
-            'v_offset': module.params['v_offset'],
-            'h_offset': module.params['h_offset']
-            }
-        }
-
-    em = EMSFP(url, payload_params, PAYLOAD_TEMPLATE)
+    try:
+        response = get(url)
+        if response.status_code == 400:
+            if channel_type == 'sdi_input':
+                module.fail_json(
+                    changed=False,
+                    msg=f"URL unreachable: {url}\nReason: Corresponding SDI input module innexistant or defective.\n"
+                )
+            elif channel_type == 'sdi_output':
+                module.fail_json(
+                    changed=False,
+                    msg=f"URL unreachable: {url}\nReason: Corresponding SDI output module innexistant or defective.\n"
+                )
+    except RequestException as e:
+        module.fail_json(
+            changed=False,
+            msg=f"URL unreachable: {url}\nReason: {e}\n"
+        )
+    em = EMSFP(url, payload_params)
 
     configure_em_device(module, em)
 

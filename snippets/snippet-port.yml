@@ -5,12 +5,66 @@
 # Copyright: (c) 2018, Société Radio-Canada>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 #
+#
+#
 ---
-  - name: Port parameter is configured
+- block:
+  - name: "Port {{ item.key }} is configured"
     embox_port:
       ip_addr: "{{ hostvars[inventory_hostname].ansible_host_ip }}"
       port_id: "{{ item.key }}"
-      sfp_type: "{{ port_sfp_type }}"
-      host_pinout: "{{ port_host_pinout }}"
-    loop:  "{{ embrionix_module.parameters.port | default({}) | dict2items }}"
+      host_pinout: "{{ item.value.host_pinout | default(None) }}"
     delegate_to: localhost
+
+  - name: Waits for port 80 after reboot
+    wait_for:
+      host: "{{ hostvars[inventory_hostname].ansible_host_ip }}"
+      port: 80
+      delay: 1
+      timeout: "{{ cv_embrionix_wait_for_timout }}"
+      state: started
+    delegate_to: localhost
+
+  - name: Wait for api readiness
+    uri:
+      url: "http://{{ hostvars[inventory_hostname].ansible_host_ip }}/emsfp/node/v1/"
+      follow_redirects: none
+      method: GET
+    register: _result
+    until: _result.status == 200
+    retries: "{{ cv_embrionix_uri_retries }}"
+    delay: 1
+    delegate_to: localhost
+
+  when: workflow_type == "inventory"
+
+- block:
+  - name: "Port {{ port['id'] }} is configured"
+    embox_port:
+      ip_addr: "{{ module_item.ip_addr }}"
+      port_id: "{{ port['id'] }}"
+      host_pinout: "{{ port['host_pinout'] }}"
+    check_mode: no
+    delegate_to: localhost
+
+  - name: Waits for port 80 after reboot
+    wait_for:
+      host: "{{ module_item.ip_addr }}"
+      port: 80
+      delay: 1
+      timeout: "{{ cv_embrionix_wait_for_timout }}"
+      state: started
+    delegate_to: localhost
+
+  - name: Wait for api readiness
+    uri:
+      url: "http://{{ module_item.ip_addr }}/emsfp/node/v1/"
+      follow_redirects: none
+      method: GET
+    register: _result
+    until: _result.status == 200
+    retries: "{{ cv_embrionix_uri_retries }}"
+    delay: 1
+    delegate_to: localhost
+
+  when: workflow_type == "csv"

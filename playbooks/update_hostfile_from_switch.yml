@@ -1,0 +1,23 @@
+# Copyright: (c) 2018, Société Radio-Canada>
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+#
+---
+- hosts: arista
+  gather_facts: no
+  vars_files:
+    - common_vars/all/all.yml
+  vars:
+    - ansible_python_interpreter: /usr/bin/env python
+
+  tasks:
+    - name: Test arista_get_embrionix_devices
+      arista_get_embrionix_devices:
+        ip_addr: 10.168.203.8
+        arista_user: "{{ arista_user }}"
+        arista_pass: "{{ arista_pass }}"
+      register: devices
+
+    - name: Test update_inventory_from_switch
+      update_inventory_from_switch:
+        inventory_path: "{{ ansible_inventory_sources[0] }}"
+        device_dict: "{{ devices.embrionix_devices }}"

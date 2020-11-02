@@ -16,6 +16,9 @@
       - ansible_python_interpreter: /usr/bin/env python
 
   tasks:
+    - set_fact:
+        workflow_type: csv
+
     - name: Conversion CSV vers YML.
       template:
         src: "templates/csv_to_yaml.j2"
@@ -33,9 +36,12 @@
       check_mode: no
       changed_when: no
 
+    - name: create reachable_hosts group.
+      include_tasks: snippets/snippet-csv-list-reachable-hosts.yml
+
     - name: Pousser la configuration
       emsfp_line_offset:
-        ip_addr: "{{ item.ip_addr | default(None) }}"
+        ip_addr: "{{ module_ip }}"
         module_type: "{{ item.module_type | default(None) }}"
         sdi_channel_id: "{{ item.sdi_channel_id | default(None) }}"
         frame_sync: "{{ item.frame_sync|bool | default(None) }}"
@@ -45,3 +51,4 @@
         h_offset: "{{ item.h_offset | default(None) }}"
       loop: "{{ modules | default(None) }}"
       delegate_to: localhost
+      when: module_ip in reachable_hosts

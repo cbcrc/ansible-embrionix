@@ -20,14 +20,19 @@
 - hosts: emsfp
   gather_facts: no
   vars_files:
-    - ../all/all.yml
+    - common_vars/all/all.yml
   vars:
     - ansible_python_interpreter: "/usr/bin/env python"
 
   tasks:
+    - set_fact:
+        workflow_type: inventory
+
     - name: create reachable_hosts group.
       import_tasks: snippets/snippet-list-reachable-hosts.yml
+      changed_when: no
 
     - name: Configure flows
       import_tasks: snippets/snippet-flows.yml
+      changed_when: no
       when: "'reachable_hosts' in group_names"

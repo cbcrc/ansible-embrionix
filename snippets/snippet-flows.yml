@@ -11,7 +11,21 @@
     ip_addr: "{{ hostvars[inventory_hostname].ansible_host_ip }}"
   register: get_type
   delegate_to: localhost
+  changed_when: no
   tags: always
+
+# - debug:
+#     msg: "{{ item.value | dict2items | rejectattr('key', 'equalto','network')|list|items2dict }}"
+#   loop: "{{ embrionix_module.parameters.flows | default({}) | dict2items }}"
+#   when:
+#     - item.value.network is iterable
+#     - item.value.network is not string
+
+# - debug:
+#     msg: "{{ item.key }}"
+#   loop: "{{ embrionix_module.parameters.flows | default({}) | dict2items }}"
+#   # when: item.value.network is mapping
+#   when: item.value.network is not mapping
 
 - name: Flows are configured
   emsfp_flows:
@@ -21,6 +35,8 @@
     format_type: "{{ item.value.format.format_type | default(None) }}"
     sfp_type: "{{ get_type.type }}"
     Flow: "{{ item.key | default(None) }}"
+    label: "{{ item.value.label | default(None) }}"
+    name: "{{ item.value.name | default(None) }}"
     aud_chan_cnt: "{{ item.value.format.aud_chan_cnt | default(None) }}"
     aud_chan_map: "{{ item.value.format.aud_chan_map | default(None) }}"
     audio_mapping_ch0: "{{ item.value.format.mapping.ch0 | default(None) }}"
@@ -41,29 +57,28 @@
     audio_mapping_ch15: "{{ item.value.format.mapping.ch15 | default(None) }}"
     anc_flow_profile: "{{ item.value.format.anc_flow_profile | default(None) }}"
     aud_ptime_idx: "{{ item.value.format.aud_ptime_idx | default(None) }}"
-    dscp: "{{ item.value.network.dscp | default(None) }}"
-    dst_ip_addr: "{{ item.value.network.dst_ip_addr | default(None) }}"
-    dst_udp_port: "{{ item.value.network.dst_udp_port | default(None) }}"
-    enable: "{{ item.value.network.enable | default(None) }}"
-    igmp_src_ip: "{{ item.value.network.igmp_src_ip | default(None) }}"
-    label: "{{ item.value.label | default(None) }}"
-    name: "{{ item.value.name | default(None) }}"
-    pkt_filter_dst_ip: "{{ item.value.network.pkt_filter_dst_ip | default(None) }}"
-    pkt_filter_dst_udp: "{{ item.value.network.pkt_filter_dst_udp | default(None) }}"
-    pkt_filter_dst_mac: "{{ item.value.network.pkt_filter_dst_mac | default(None) }}"
-    pkt_filter_src_ip: "{{ item.value.network.pkt_filter_src_ip | default(None) }}"
-    pkt_filter_src_udp: "{{ item.value.network.pkt_filter_src_udp | default(None) }}"
-    pkt_filter_src_mac: "{{ item.value.network.pkt_filter_src_mac | default(None) }}"
-    pkt_filter_ssrc: "{{ item.value.network.pkt_filter_ssrc | default(None) }}"
-    pkt_filter_vlan: "{{ item.value.network.pkt_filter_vlan | default(None) }}"
-    rtp_pt: "{{ item.value.network.rtp_pt | default(None) }}"
-    sender_type: "{{ item.value.network.sender_type | default(None) }}"
-    src_ip_addr: "{{ item.value.network.src_ip_addr | default(None) }}"
-    src_udp_port: "{{ item.value.network.src_udp_port | default(None) }}"
-    # ssrc: "{{ item.ssrc | default(None) }}" #read only value
-    vlan_tag: "{{ item.value.network.vlan_tag | default(None) }}"
+    dscp: "{{ item.value.network[0].dscp | default(None) }}"
+    dst_ip_addr: "{{ item.value.network[0].dst_ip_addr | default(None) }}"
+    dst_udp_port: "{{ item.value.network[0].dst_udp_port | default(None) }}"
+    enable: "{{ item.value.network[0].enable | default(None) }}"
+    igmp_src_ip: "{{ item.value.network[0].igmp_src_ip | default(None) }}"
+    pkt_filter_dst_ip: "{{ item.value.network[0].pkt_filter_dst_ip | default(None) }}"
+    pkt_filter_dst_udp: "{{ item.value.network[0].pkt_filter_dst_udp | default(None) }}"
+    pkt_filter_dst_mac: "{{ item.value.network[0].pkt_filter_dst_mac | default(None) }}"
+    pkt_filter_src_ip: "{{ item.value.network[0].pkt_filter_src_ip | default(None) }}"
+    pkt_filter_src_udp: "{{ item.value.network[0].pkt_filter_src_udp | default(None) }}"
+    pkt_filter_src_mac: "{{ item.value.network[0].pkt_filter_src_mac | default(None) }}"
+    pkt_filter_ssrc: "{{ item.value.network[0].pkt_filter_ssrc | default(None) }}"
+    pkt_filter_vlan: "{{ item.value.network[0].pkt_filter_vlan | default(None) }}"
+    rtp_pt: "{{ item.value.network[0].rtp_pt | default(None) }}"
+    sender_type: "{{ item.value.network[0].sender_type | default(None) }}"
+    src_ip_addr: "{{ item.value.network[0].src_ip_addr | default(None) }}"
+    src_udp_port: "{{ item.value.network[0].src_udp_port | default(None) }}"
+    vlan_tag: "{{ item.value.network[0].vlan_tag | default(None) }}"
   loop: "{{ embrionix_module.parameters.flows | default({}) | dict2items }}"
-  when: embrionix_module.parameters is defined
+  when:
+    - embrionix_module.parameters is defined
+    - item.value.network is not mapping
   delegate_to: localhost
   tags: always
 
@@ -75,6 +90,8 @@
     format_type: "{{ item.value.format.format_type | default(None) }}"
     sfp_type: "{{ get_type.type }}"
     Flow: "{{ item.key | default(None) }}"
+    label: "{{ item.value.label | default(None) }}"
+    name: "{{ item.value.name | default(None) }}"
     aud_chan_cnt: "{{ item.value.format.aud_chan_cnt | default(None) }}"
     aud_chan_map: "{{ item.value.format.aud_chan_map | default(None) }}"
     audio_mapping_ch0: "{{ item.value.format.mapping.ch0 | default(None) }}"
@@ -100,8 +117,6 @@
     dst_udp_port: "{{ item.value.network.dst_udp_port | default(None) }}"
     enable: "{{ item.value.network.enable | default(None) }}"
     igmp_src_ip: "{{ item.value.network.igmp_src_ip | default(None) }}"
-    label: "{{ item.value.label | default(None) }}"
-    name: "{{ item.value.name | default(None) }}"
     pkt_filter_dst_ip: "{{ item.value.network.pkt_filter_dst_ip | default(None) }}"
     pkt_filter_dst_udp: "{{ item.value.network.pkt_filter_dst_udp | default(None) }}"
     pkt_filter_dst_mac: "{{ item.value.network.pkt_filter_dst_mac | default(None) }}"
@@ -114,10 +129,10 @@
     sender_type: "{{ item.value.network.sender_type | default(None) }}"
     src_ip_addr: "{{ item.value.network.src_ip_addr | default(None) }}"
     src_udp_port: "{{ item.value.network.src_udp_port | default(None) }}"
-    # ssrc: "{{ item.ssrc | default(None) }}" #read only value
     vlan_tag: "{{ item.value.network.vlan_tag | default(None) }}"
-  loop: "{{ emsfp_module.parameter.flows | default({}) | dict2items }}"
-  when: emsfp_module.parameter is defined
-  #big duplicate for a small change
+  loop: "{{ embrionix_module.parameters.flows | default({}) | dict2items }}"
+  when: 
+    - embrionix_module.parameters is defined
+    - item.value.network is mapping
   delegate_to: localhost
   tags: always

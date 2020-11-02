@@ -6,6 +6,7 @@
 #
 from yaml import dump
 from requests import get
+from requests import RequestException
 
 # Verifie que les valeurs entrées sont de 0.0.0.0 à 255.255.255.255.
 IP_ADDRESS_REGEX = "^(([01]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5]).([01]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5]).([01]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5]).([01]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5]))$"
@@ -21,7 +22,8 @@ MAC_ADDRESS_REGEX = "^([a-f]|[A-F]|[0-9]){2}[:\s]([a-f]|[A-F]|[0-9]){2}[:\s]([a-
 
 
 def flatten_dict(base_dict):
-    """Take a dict and flattens it.
+    """
+    flatten_dict Take a dict and flattens it.
 
     Args:
         base_dict: The dictionnary to flatten
@@ -40,7 +42,8 @@ def flatten_dict(base_dict):
 
 
 def get_diff_keys(first_dict, second_dict):
-    """Take two dicts and return a set containing the different keys between the first and second dictionnary.
+    """
+    get_diff_keys Take two dicts and return a set containing the different keys between the first and second dictionnary.
 
     Args:
         first_dict (dict): The reference dictionnary
@@ -54,7 +57,8 @@ def get_diff_keys(first_dict, second_dict):
 
 
 def get_diff_items_keys(first_dict, second_dict):
-    """Create a list containing the keys for all the items having different value between the two input dictionnaries.
+    """
+    get_diff_items_keys Create a list containing the keys for all the items having different value between the two input dictionnaries.
 
     Args:
         first_dict (dict): First dictionnary
@@ -73,7 +77,8 @@ def get_diff_items_keys(first_dict, second_dict):
 
 
 def get_module_type(ip_address):
-    """Get the module type to verify if the firmware correpond to the module type.
+    """
+    get_module_type Get the module type to verify if the firmware correpond to the module type.
 
     Returns:
         [str] - [Returns module type : 'encap', 'decap', 'unknown']
@@ -92,7 +97,8 @@ def get_module_type(ip_address):
 
 
 def get_module_type2(ip_address):
-    """Get the module type to verify if the firmware correpond to the module type.
+    """
+    get_module_type2 Get the module type to verify if the firmware correpond to the module type.
 
     Returns:
         [str] - [Returns module type : 'encap', 'decap', 'unknown']
@@ -109,9 +115,9 @@ def get_module_type2(ip_address):
     else:
         return 'unknown'
 
-
 def configure_em_device(module, emsfp_instance, validate_changes=True, message="----------------------------------------------------------------------------", wait_for_device_reboot=0):
-    """ Utility function to send the configuration payload. Exit the module on success or error.
+    """
+    configure_em_device Utility function to send the configuration payload. Exit the module on success or error.
 
     Returns:
         Args:
@@ -120,21 +126,31 @@ def configure_em_device(module, emsfp_instance, validate_changes=True, message="
             validate_changes (bool): True for configuration validation, flase otherwise.
             message (str): Optionnal debug message
     """
+    wait_for_device_reboot = 0
+    if validate_changes:
+        wait_for_device_reboot = 15
     try:
         inital_comp = emsfp_instance.get_config_diff
     except KeyError as e:
         module.fail_json(changed=False, msg=f"Route: {emsfp_instance.url}\nPayload: {emsfp_instance.payload}\n{e}")
     else:
-        if inital_comp:
+        if inital_comp != {}:
             if not module.check_mode:
                 try:
                     response_message = emsfp_instance.send_configuration(validate_changes, wait_for_device_reboot)
                 except Exception as e:
-                    module.fail_json(changed=False, msg=f"Route: {emsfp_instance.url}\nDebug:\n{message}\nPayload: {emsfp_instance.payload}\n{e}\n----------------------------------------------------------------------------")
+                    module.fail_json(changed=False, msg=f"Route: {emsfp_instance.url}\nDebug:\n{message}\nException occured: {e}\n----------------------------------------------------------------------------")
                 else:
                     module.exit_json(changed=True, msg=f"Route: {emsfp_instance.url}\nDebug:\n{message}\n{response_message}\n----------------------------------------------------------------------------")
             else:
                 module.exit_json(changed=True, msg=f"Route: {emsfp_instance.url}\nDebug:\n{message}\nValues that would be modified (check_mode):", values=dump(inital_comp, default_flow_style=False))
         # Payload == response, no need to do more
         else:
-            module.exit_json(changed=False, msg=f"Route: {emsfp_instance.url}\nDebug:\n{message}\nNothing to change: \n{dump(emsfp_instance.payload_values, default_flow_style=False)}\n{dump(emsfp_instance.target_config, default_flow_style=False)}\n----------------------------------------------------------------------------")
+            module.exit_json(changed=False, msg=f"No changes needed!\nRoute: {emsfp_instance.url}\nDebug:\n{message}\n----------------------------------------------------------------------------")
+
+def clean_start_time(date_string):
+    date_string = date_string.split(" ")
+    year = date_string[-1]
+    date_string = date_string[1:4]
+    date_string.append(year)
+    return "_".join(date_string)

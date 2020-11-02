@@ -1,0 +1,104 @@
+# Playbook reporting-red-blue.yml
+#
+# This playbook test if a host is reachable and add them to a reachable_hosts group if they are and adds reporting. 
+#
+# Copyright: (c) 2018, Société Radio-Canada>
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+#
+---
+  - name: get firmware version low and high level
+    hosts: all
+    gather_facts: no
+    become: no
+    vars_files:
+      - common_vars/all/all.yml
+    vars:
+      ansible_python_interpreter: "/usr/bin/env python"
+
+    tasks:
+      - name: Get Firmware High Level Version
+        get_firmware_version:
+          ip_addr: "{{ hostvars[inventory_hostname].ansible_host_ip}}"
+          inventory: "{{ inventory_file }}"
+          hostname: "{{ inventory_hostname }}"
+          device_type: "{{groups}}"
+        when: "'emsfp' in group_names"
+        register: firmware_version
+
+      - name: Get Serial Number
+        get_serial_number:
+          ip_addr: "{{ hostvars[inventory_hostname].ansible_host_ip}}"
+          inventory: "{{ inventory_file }}"
+          hostname: "{{ inventory_hostname }}"
+          device_type: "{{groups}}"
+        when: "'emsfp' in group_names"
+        register: serial_number
+
+      - name: Get Firmware Low Level Version
+        get_firmware_low_level:
+          ip_addr: "{{ hostvars[inventory_hostname].ansible_host}}"
+          arista_user: "{{ vault_arista_user }}"
+          arista_pass: "{{ vault_arista_pass }}"
+        when: 
+          - "'arista' in group_names"
+          - "'ansible_host' in hostvars[inventory_hostname]"
+        register: firmware_version_low_level
+
+      - name: Get Firmware Low Level Version ansible ip var
+        get_firmware_low_level:
+          ip_addr: "{{ hostvars[inventory_hostname].ansible_host_ip}}"
+        when: 
+          - "'arista' in group_names"
+          - "'ansible_host_ip' in hostvars[inventory_hostname]"
+        register: firmware_version_low_level_ip
+
+      - name: save high level
+        save_firmware:
+          ip_addr: "{{ hostvars[inventory_hostname].ansible_host_ip}}"
+          hostname: "{{inventory_hostname}}"
+          firmware_version: "{{firmware_version.version | default('{Not Found}')}}"
+          serial_number: "{{serial_number.serial_number | default('Not Found')}}"
+          group_name: "{{group_names}}"
+        delegate_to: localhost
+        when: "'emsfp' in group_names"
+
+      - name: save low level
+        save_firmware:
+          ip_addr: "{{ hostvars[inventory_hostname].ansible_host }}"
+          hostname: "{{inventory_hostname}}"
+          low_level: "{{firmware_version_low_level.firmware | default(omit)}}"
+          low_level_ip: "{{firmware_version_low_level_ip.firmware | default(omit)}}"
+          group_name: "{{group_names}}"
+        delegate_to: localhost
+        when: 
+          - "'arista' in group_names"
+          - "'ansible_host' in hostvars[inventory_hostname]"
+          - "firmware_version_low_level.already_scanned == false"
+
+      - name: save low level
+        save_firmware:
+          ip_addr: "{{ hostvars[inventory_hostname].ansible_host }}"
+          hostname: "{{inventory_hostname}}"
+          low_level: "{{firmware_version_low_level.firmware | default(omit)}}"
+          low_level_ip: "{{firmware_version_low_level_ip.firmware | default(omit)}}"
+          group_name: "{{group_names}}"
+        delegate_to: localhost
+        when: 
+          - "'arista' in group_names"
+          - "'ansible_host_ip' in hostvars[inventory_hostname]"
+          - "firmware_version_low_level.already_scanned == false"
+        
+
+  - name: report firmware versions from json
+    hosts: localhost
+    gather_facts: no
+    become: no
+    vars_files:
+      - common_vars/all/all.yml
+    vars:
+      ansible_python_interpreter: "/usr/bin/env python"
+    tasks:
+      - name: report firmware
+        firmware_reporting:
+          start_time: "{{date}}"
+          report_type: "{{inventory}}"

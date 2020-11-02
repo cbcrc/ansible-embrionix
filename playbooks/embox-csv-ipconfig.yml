@@ -11,11 +11,16 @@
 ---
 - hosts: localhost
   gather_facts: no
+  vars_files:
+      - common_vars/all/all.yml
   vars:
     - var_ip_config_file: "csv/ip-config-file.csv"
     - ansible_python_interpreter: /usr/bin/env python
 
   tasks:
+    - set_fact:
+        workflow_type: csv
+
     - name: Conversion CSV vers YML.
       template:
         src: "templates/csv_to_yaml.j2"
@@ -33,6 +38,9 @@
       check_mode: no
       changed_when: no
 
+    - name: create reachable_hosts group.
+      include_tasks: snippets/snippet-csv-list-reachable-hosts.yml
+
     - name: Configure red and blue network (and wait for device reboot)
       embox_interfaces:
         ip_addr: "{{ item.ip_addr_red }}"
@@ -44,6 +52,31 @@
         e2_gateway: "{{ item.gateway_blue }}"
       loop: "{{ modules }}"
       delegate_to: localhost
+      when: item.ip_addr_red in reachable_hosts
+
+    - name: Waits for port 80 after reboot
+      wait_for:
+        host: "{{ item.ip_addr_red }}"
+        port: 80
+        delay: 1
+        timeout: "{{ cv_embrionix_wait_for_timout }}"
+        state: started
+      loop: "{{ modules }}"
+      delegate_to: localhost
+      when: item.ip_addr_red in reachable_hosts
+
+    - name: Wait for api readiness
+      uri:
+        url: "http://{{ item.ip_addr_red }}/emsfp/node/v1/"
+        follow_redirects: none
+        method: GET
+      register: _result
+      until: _result.status == 200
+      retries: "{{ cv_embrionix_uri_retries }}"
+      delay: 1
+      loop: "{{ modules }}"
+      delegate_to: localhost
+      when: item.ip_addr_red in reachable_hosts
 
     - name: Configurer le hostname
       emsfp_ipconfig:
@@ -51,12 +84,28 @@
         hostname: "{{ item.hostname }}"
       loop: "{{ modules }}"
       delegate_to: localhost
+      when: item.ip_addr_red in reachable_hosts
 
     - name: Waits for port 80 after reboot
       wait_for:
         host: "{{ item.ip_addr_red }}"
         port: 80
         delay: 1
+        timeout: "{{ cv_embrionix_wait_for_timout }}"
         state: started
       loop: "{{ modules }}"
       delegate_to: localhost
+      when: item.ip_addr_red in reachable_hosts
+
+    - name: Wait for api readiness
+      uri:
+        url: "http://{{ item.ip_addr_red }}/emsfp/node/v1/"
+        follow_redirects: none
+        method: GET
+      register: _result
+      until: _result.status == 200
+      retries: "{{ cv_embrionix_uri_retries }}"
+      delay: 1
+      loop: "{{ modules }}"
+      delegate_to: localhost
+      when: item.ip_addr_red in reachable_hosts

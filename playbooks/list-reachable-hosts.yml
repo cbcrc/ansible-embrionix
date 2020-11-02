@@ -25,6 +25,7 @@
   - name: list unreachable hosts
     hosts: all:!reachable_hosts
     gather_facts: no
+
     tasks:
       - debug:
             msg: "{{ inventory_hostname }} is unreachable"

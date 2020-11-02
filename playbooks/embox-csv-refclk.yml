@@ -15,13 +15,14 @@
 ---
 - hosts: localhost
   gather_facts: no
-  # vars_files:
-  #   - ../all/all.yml
   vars:
     - var_ip_config_file: "csv/ip-config-file.csv"
     - ansible_python_interpreter: /usr/bin/env python
 
   tasks:
+    - set_fact:
+        workflow_type: csv
+
     - name: Conversion CSV vers YML.
       template:
         src: "templates/csv_to_yaml.j2"
@@ -39,6 +40,9 @@
       check_mode: no
       changed_when: no
 
+    - name: create reachable_hosts group.
+      include_tasks: snippets/snippet-csv-list-reachable-hosts.yml
+
     - name: Pousser la configuration pour refclk
       emsfp_refclk:
         ip_addr: "{{ item.ip_addr_red }}"
@@ -46,23 +50,28 @@
         manual_ctrl: "{{ item.ManualMode }}"
       loop: "{{ modules }}"
       delegate_to: localhost
+      when: item.ip_addr_red in reachable_hosts
 
     - name: Pousser la configuration pour refclk_id 1
       emsfp_refclk_id:
         ip_addr: "{{ item.ip_addr_red }}"
-        reference_clock_id: "{{ emsfp_refclk_1 }}"
+        # reference_clock_id: "{{ emsfp_refclk_1 }}"
+        reference_clock_id: "f2807dac-985d-11e5-8994-feff819cdc9f"
         domain_num: "{{ item.PTP_domain_nb }}"
         vlan_id: "{{ item.PTP_VlanID }}"
         dscp: "{{ item.PTP_dscp }}"
       loop: "{{ modules }}"
       delegate_to: localhost
+      when: item.ip_addr_red in reachable_hosts
 
     - name: Pousser la configuration pour refclk_id 2
       emsfp_refclk_id:
         ip_addr: "{{ item.ip_addr_red }}"
-        reference_clock_id: "{{ emsfp_refclk_2 }}"
+        # reference_clock_id: "{{ emsfp_refclk_2 }}"
+        reference_clock_id: "f3807dac-985d-11e5-8994-feff819cdc9f"
         domain_num: "{{ item.PTP_domain_nb }}"
         vlan_id: "{{ item.PTP_VlanID }}"
         dscp: "{{ item.PTP_dscp }}"
       loop: "{{ modules }}"
       delegate_to: localhost
+      when: item.ip_addr_red in reachable_hosts

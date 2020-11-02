@@ -49,29 +49,6 @@ status:
 
 '''
 
-#Contournement pour bug avec flow ID string vide
-
-# PAYLOAD_TEMPLATE = {
-#     "sdi_aud_chans_cfg": {
-#         "ch0": ["regex", SDI_CHANNEL_REGEX],
-#         "ch1": ["regex", SDI_CHANNEL_REGEX],
-#         "ch2": ["regex", SDI_CHANNEL_REGEX],
-#         "ch3": ["regex", SDI_CHANNEL_REGEX],
-#         "ch4": ["regex", SDI_CHANNEL_REGEX],
-#         "ch5": ["regex", SDI_CHANNEL_REGEX],
-#         "ch6": ["regex", SDI_CHANNEL_REGEX],
-#         "ch7": ["regex", SDI_CHANNEL_REGEX],
-#         "ch8": ["regex", SDI_CHANNEL_REGEX],
-#         "ch9": ["regex", SDI_CHANNEL_REGEX],
-#         "ch10": ["regex", SDI_CHANNEL_REGEX],
-#         "ch11": ["regex", SDI_CHANNEL_REGEX],
-#         "ch12": ["regex", SDI_CHANNEL_REGEX],
-#         "ch13": ["regex", SDI_CHANNEL_REGEX],
-#         "ch14": ["regex", SDI_CHANNEL_REGEX],
-#         "ch15": ["regex", SDI_CHANNEL_REGEX]
-#         }
-#     }
-
 PAYLOAD_TEMPLATE = {
     "sdi_aud_chans_cfg": {
         "ch0": ["regex", DUMMY_REGEX],

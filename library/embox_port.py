@@ -5,10 +5,10 @@
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 #
 from requests import get
-from ipaddress import IPv4Address,IPv4Network
+from ipaddress import IPv4Address, ip_network, ip_interface, AddressValueError, NetmaskValueError
 from ansible.module_utils.basic import AnsibleModule
 from module_utils.emsfp import EMSFP
-from module_utils.utils import configure_em_device, IP_ADDRESS_REGEX, HOSTNAME_REGEX
+from module_utils.utils import configure_em_device, IP_ADDRESS_REGEX, HOSTNAME_REGEX,get_module_type
 from yaml import dump
 
 ANSIBLE_METADATA = {'metadata_version': '1.0.0',
@@ -67,46 +67,31 @@ status:
 
 '''
 
-PAYLOAD_TEMPLATE = {
-    'sfp_type': ["choices", "auto", "n-msa", "msa"],
-    'host_pinout': ["choices", "1T", "1R", "2R", "2T", "RT"]
-    }
-
 def main():
     module = AnsibleModule(
         argument_spec=dict(
             ip_addr=dict(type='str', required=True),
             port_id=dict(type='str', required=True),
-            sfp_type=dict(type='str', required=False),
-            host_pinout=dict(type='str', required=False)
+            host_pinout=dict(type='str', required=True)
             ),
         supports_check_mode=True
     )
 
+    try:
+        em_type = get_module_type(f"{IPv4Address(module.params['ip_addr'])}")
+    except (AddressValueError, NetmaskValueError) as e:
+        module.fail_json(changed=False, msg=e)
+
     payload_params = {
-        'sfp_type': module.params['sfp_type'],
         'host_pinout': module.params['host_pinout']
-        }
+    }
 
-    em_type = get_module_type(module.params['ip_addr'])
-
-    if module.params['port_id'] == 'all':
-        ports = []
-        try:
-            url = f"http://{IPv4Address(module.params['ip_addr'])}/emsfp/node/v1/port/"
-            ports = get(url)
-            ports.raise_for_status()
-        except Exception as e:
-            module.fail_json(changed=False, msg=f"Connexion error: {e}")
-
-        for port in ports.json():
-            url = f"http://{IPv4Address(module.params['ip_addr'])}/emsfp/node/v1/port/"
-            em = EMSFP(f"{url}{port}", payload_params, PAYLOAD_TEMPLATE)
-            configure_em_device(module, em)
-    elif (em_type == 'Embox6' and module.params['port_id'] <= 6) or (em_type == 'Embox3' and module.params['port_id'] <= 3):
-        url = f"http://{IPv4Address(module.params['ip_addr'])}/emsfp/node/v1/port/{module.params['port_id']}"
-        em = EMSFP(url, payload_params, PAYLOAD_TEMPLATE)
-        configure_em_device(module, em)
+    if (em_type == 'Embox6' and int(module.params['port_id']) <= 6) or (em_type == 'Embox3' and int(module.params['port_id']) <= 3):
+        url = f"http://{module.params['ip_addr']}/emsfp/node/v1/port/{module.params['port_id']}"
+        em = EMSFP(url, payload_params)
+        configure_em_device(module, em, wait_for_device_reboot=25)
+    else:
+        module.fail_json(changed=False, msg=f"Port {module.params['port_id']} doesn't exists on {em_type}.")
 
 if __name__ == '__main__':
     main()

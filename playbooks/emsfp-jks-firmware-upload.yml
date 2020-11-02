@@ -1,0 +1,147 @@
+# Playbook emsfp-jks-firmware-upload.yml
+# 
+# *** This playbook is deprecated. Use emsfp-workflow-firmware-upgrade.yml playbook instead.***
+
+# This playbook is used by a Jenkins pipeline to upload a firmware.
+#
+# Copyright: (c) 2018, Société Radio-Canada>
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+#
+---
+- hosts: emsfp
+  gather_facts: no
+  vars_files:
+    - common_vars/all/all.yml
+  vars:
+    - ansible_python_interpreter: /usr/bin/env python
+
+  tasks:
+    - set_fact:
+        workflow_type: inventory
+
+    - name: Get the firmware configuration of emsfp modules.
+      emsfp_firmware_get_configs:
+        module_ip: "{{ hostvars[inventory_hostname].ansible_host_ip}}"
+      delegate_to: localhost
+      tags: always
+
+    - name: Un dossier temporaire est créé pour les téléchargements
+      block:
+        - command: "mktemp -d"
+          register: mktemp_resultat
+        - set_fact:
+            dossier_temp: "{{ mktemp_resultat.stdout }}"
+      delegate_to: localhost
+      tags: always
+
+    - name: Le firmware "{{ emsfp_firmware }}" est téléchargé
+      maven_artifact:
+        repository_url: "https://asd-repo-np.cbc-rc.ca/repository/maven-hosted/"
+        group_id: "org.istm.artifacts.embrionix"
+        artifact_id: firmware
+        version: "{{ emsfp_firmware }}"
+        extension: img
+        dest: "{{ dossier_temp }}"
+      register: module_temp_firmware_filepath
+      delegate_to: localhost
+      tags: always
+
+    - name: Check encap firmware file compatibility.
+      emsfp_firmware_check_compatibility:
+        module_ip: "{{ hostvars[inventory_hostname].ansible_host_ip}}"
+        module_enc_firmware: "{{ module_temp_firmware_filepath.dest }}"
+      delegate_to: localhost
+      register: module_compatibility
+      tags: encap
+
+    - name: Check decap firmware file compatibility.
+      emsfp_firmware_check_compatibility:
+        module_ip: "{{ hostvars[inventory_hostname].ansible_host_ip}}"
+        module_dec_firmware: "{{ module_temp_firmware_filepath.dest }}"
+      delegate_to: localhost
+      register: module_compatibility
+      tags: decap
+
+    - name: Clear selected firmware slot.
+      emsfp_firmware_clear_slot:
+        module_ip: "{{ hostvars[inventory_hostname].ansible_host_ip}}"
+        module_firmware_slot: "{{ firmware_slot }}"
+      delegate_to: localhost
+      register: clear_result
+      # ignore_errors: yes
+      failed_when:
+        - ignorer_erreurs|bool == false
+        - clear_result.failed == true
+      tags: always
+
+    - block:
+      - name: Upload firmware to the selected slot.
+        emsfp_firmware_upload:
+          module_ip: "{{ hostvars[inventory_hostname].ansible_host_ip}}"
+          module_firmware_slot: "{{ firmware_slot }}"
+          module_firmware_filepath: "{{ module_compatibility.module_firmware_filepath }}"
+        delegate_to: localhost
+        tags: always
+
+      - name: Set the selected slot as Active.
+        emsfp_firmware_set_active:
+          module_ip: "{{ hostvars[inventory_hostname].ansible_host_ip}}"
+          module_firmware_slot: "{{ firmware_slot }}"
+        delegate_to: localhost
+        tags: always
+
+      - name: Set the selected slot as Default.
+        emsfp_firmware_set_default:
+          module_ip: "{{ hostvars[inventory_hostname].ansible_host_ip}}"
+          module_firmware_slot: "{{ firmware_slot }}"
+        delegate_to: localhost
+        tags: always
+
+      - name: Get the new firmware configuration of emsfp modules.
+        emsfp_firmware_get_configs:
+          module_ip: "{{ hostvars[inventory_hostname].ansible_host_ip}}"
+        delegate_to: localhost
+        tags: always
+
+      - name: Reset the module configuration to application level.
+        emsfp_reset_configs:
+          ip_addr: "{{ hostvars[inventory_hostname].ansible_host_ip }}"
+          reboot: yes
+          config_reset: application
+        delegate_to: localhost
+        when: not ansible_check_mode
+        ignore_errors: yes
+        tags: always
+
+      - name: Waits for port 80 for 300 sec
+        wait_for:
+          host: "{{ hostvars[inventory_hostname].ansible_host_ip }}"
+          port: 80
+          delay: 1
+          state: started
+        delegate_to: localhost
+        tags: always
+
+      - name: Enregistrer la licence frame_sync
+        uri:
+          url: "http://{{ hostvars[inventory_hostname].ansible_host_ip }}/emsfp/node/v1/self/license/"
+          body: '{"feature": {"frame_sync": "{{frame_sync_licence}}"}}'
+          body_format: json
+          method: PUT
+        delegate_to: localhost
+        when:
+          - module_compatibility.module_type == 'Encapsulator'
+          - frame_sync_licence is defined
+        tags: always
+
+      when:
+        - ignorer_erreurs|bool == false
+        - clear_result.failed == false
+
+
+    - name: Le dossier temporaire est effacé
+      file:
+        path: "{{ dossier_temp }}"
+        state: absent
+      delegate_to: localhost
+      tags: always

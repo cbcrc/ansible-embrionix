@@ -1,0 +1,57 @@
+# Copyright: (c) 2018, Société Radio-Canada>
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+#
+---
+- hosts: emsfp
+  gather_facts: no
+  vars_files:
+    - common_vars/all/all.yml
+    - common_vars/framesync_licence.yml
+    - common_vars/key_filter.yml
+    - common_vars/box3_key_filter.yml
+    - common_vars/box6_key_filter.yml
+  vars:
+    - ansible_python_interpreter: "/usr/bin/env python"
+
+  tasks:
+    - set_fact:
+        workflow_type: inventory
+
+    - name: create reachable_hosts group.
+      import_tasks: snippets/snippet-list-reachable-hosts.yml
+      changed_when: no
+
+    - block:
+
+      - name: Checking if current config exists
+        stat:
+          path: "{{ inventory_dir }}/host_vars/{{ hostvars[inventory_hostname].inventory_hostname }}.yml"
+        register: current_config
+        delegate_to: localhost
+
+      - name: Config Download 
+        import_tasks: snippets/snippet-save-config-to-host_vars.yml
+        delegate_to: localhost
+
+      - name: Write temporary downloaded config to file
+        copy:
+          content: "{{ downloaded_config }}"
+          dest: "vars/values_read_from_module_{{ ansible_host_ip }}.yml"
+          force: yes
+        delegate_to: localhost
+        when: not ansible_check_mode
+        vars:
+          - ansible_python_interpreter: "/usr/bin/python"
+        tags: always 
+
+      - name: check differences in host files
+        sanity_check:
+          current: "{{ inventory_dir }}/host_vars/{{ hostvars[inventory_hostname].inventory_hostname }}.yml"
+          downloaded: "vars/values_read_from_module_{{ ansible_host_ip }}.yml"
+          hostname: "{{ hostvars[inventory_hostname].inventory_hostname }}"
+        delegate_to: localhost
+        when: 
+          - current_config.stat.exists == True
+        register: differences
+
+      when: "'reachable_hosts' in group_names"

@@ -11,13 +11,16 @@
 - block:
     - name: ping hosts
       local_action: "command ping -c 2 {{ hostvars[inventory_hostname].ansible_host_ip}}"
+      changed_when: no
       register: result
     - name: add reached host to reachable_host group
       group_by:
         key: "reachable_hosts"
+      changed_when: no
       when: result.rc == 0
   rescue:
     - name: add unreached hosts to unreachable_hosts list
       debug:
         msg: "{{inventory_hostname}}  is unreachable"
+      changed_when: no
   when: "'emsfp' in group_names"

@@ -9,9 +9,12 @@
 - hosts: emsfp
   gather_facts: no
   vars:
-    - ansible_python_interpreter: "{{ lookup('env','VIRTUAL_ENV') }}/bin/python"
+    - ansible_python_interpreter: "/usr/bin/env python"
 
   tasks:
+    - set_fact:
+        workflow_type: inventory
+
     - name: create reachable_hosts group.
       import_tasks: snippets/snippet-list-reachable-hosts.yml
 

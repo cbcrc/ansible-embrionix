@@ -1,4 +1,3 @@
-#
 # Copyright: (c) 2018, Société Radio-Canada>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 #
@@ -8,6 +7,7 @@
     ip_addr: "{{module_item['ip_addr_red']}}"
   register: embox_type
   delegate_to: localhost
+  when: module_item['ip_addr_red'] in reachable_hosts
 
 - name: sdi/operating_bit_rate is configured
   embox_sdi:
@@ -16,4 +16,5 @@
   loop: "{{ modules }}"
   delegate_to: localhost
   when: 
-    - embox_type.type in ["Embox6_8", "box3u_25G"]
+    - embox_type.type in ["Embox6_8"]
+    - module_item['ip_addr_red'] in reachable_hosts

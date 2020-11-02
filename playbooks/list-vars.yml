@@ -1,7 +1,3 @@
-# Playbook emsfp-get-firmware-version.yml
-#
-# This playbook return the Embrionix devices firmware version.
-#
 # Copyright: (c) 2018, Société Radio-Canada>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 #
@@ -9,11 +5,10 @@
 - hosts: emsfp
   gather_facts: no
   vars_files:
-    - ../all/all.yml
+    - common_vars/all/all.yml
   vars:
     - ansible_python_interpreter: "/usr/bin/env python"
 
   tasks:
-    - name: Obtenir la version
-      get_firmware_version:
-        ip_addr: "{{ hostvars[inventory_hostname].ansible_host_ip}}"
+    - debug:
+        msg: "{{ ansible_inventory_sources }}"

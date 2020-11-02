@@ -3,6 +3,23 @@
 #
 ---
 box3_key_filter:
+# /self/ipconfig
+  - "version"
+  - "local_mac"
+  - "ip_addr"
+  - "subnet_mask"
+  - "gateway"
+  - "hostname"
+  - "port"
+  - "dhcp_enable"
+  - "alias_ip"
+  - "alias_ip_subnet"
+  - "ctl_vlan_id"
+  - "ctl_vlan_pcp"
+  - "data_vlan_id"
+  - "data_vlan_enable"
+  - "bootstatus1"
+  - "bootstatus2"
 # /self/protocols
   - "mdns_enable"
   - "ember_server_port"
@@ -36,6 +53,7 @@ box3_key_filter:
   - "mode"
   - "manual_ctrl"
   - "selected_uuid"
+  - "uuid"
 # /refclk/{refclkID}
   - "domain_num"
   - "vlan_id"
@@ -47,7 +65,7 @@ box3_key_filter:
 # /flows/{decflowId}
   - "label"
   - "name"
-  - network"
+  - "network"
   - "src_ip_addr"
   - "src_udp_port"
   - "dst_ip_addr"
@@ -64,6 +82,7 @@ box3_key_filter:
   - "pkt_filter_vlan"
   - "pkt_filter_ssrc"
   - "igmp_src_ip"
+  - "sender_type"
   - "enable"
   - "rtp_pt"
   - "ttl"
@@ -83,7 +102,9 @@ box3_key_filter:
   - "format_ictcp"
   - "sampling_format"
   - "cdis"
+  - "mapping"
   - "aud_chan_cnt"
+  - "aud_chan_map"
   - "aud_ptime_idx"
   - "aud_format"
   - "aud_chan_map"
@@ -107,7 +128,7 @@ box3_key_filter:
   - "offset_mode"
   - "usec_offset"
   - "v_offset"
-  - h_offset"
+  - "h_offset"
   - "video_rate_convert"
 # /sdi_audio/{sdiAudioId}
   - "sdi_aud_chans_cfg"
@@ -129,25 +150,5 @@ box3_key_filter:
   - "ch15"
 # /sdi_output/{sdiOutputId}
   - "sdi_aud_chans_cfg"
-  # - "ch0" -> clef déjà dans la liste
-  # - "ch1" -> clef déjà dans la liste
-  # - "ch2" -> clef déjà dans la liste
-  # - "ch3" -> clef déjà dans la liste
-  # - "ch4" -> clef déjà dans la liste
-  # - "ch5" -> clef déjà dans la liste
-  # - "ch6" -> clef déjà dans la liste
-  # - "ch7" -> clef déjà dans la liste
-  # - "ch8" -> clef déjà dans la liste
-  # - "ch9" -> clef déjà dans la liste
-  # - "ch10" -> clef déjà dans la liste
-  # - "ch11" -> clef déjà dans la liste
-  # - "ch12" -> clef déjà dans la liste
-  # - "ch13" -> clef déjà dans la liste
-  # - "ch15" -> clef déjà dans la liste
-  # - "line_offset" -> clef déjà dans la liste
-  # - "offset_mode" -> clef déjà dans la liste
-  # - "usec_offset" -> clef déjà dans la liste
-  # - "v_offset" -> clef déjà dans la liste
-  # - "h_offset" -> clef déjà dans la liste
   - "audio_delay"
   - "frame_buffer"

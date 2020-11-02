@@ -1,0 +1,144 @@
+# Playbook emsfp-workflow-firmware-upgrade.yml
+#
+# This playbook upgrade the firmware of Embrionix devices. Used for manual upgrade and in Jenkins pipeline.
+#
+# Copyright: (c) 2018, Société Radio-Canada>
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+#
+---
+- hosts: emsfp
+  gather_facts: no
+  vars_files:
+    - common_vars/all/all.yml
+    - common_vars/framesync_licence.yml
+  vars:
+    - ansible_python_interpreter: /usr/bin/env python
+
+  tasks:
+    - set_fact:
+        workflow_type: inventory
+
+    - name: create reachable_hosts group.
+      import_tasks: snippets/snippet-list-reachable-hosts.yml
+      tags: always
+
+    - block:
+        - name: host_vars file exists
+          import_tasks: snippets/snippet-save-config-to-host_vars.yml
+          when: embrionix_module is not defined
+          tags: always
+
+        - name: Get the firmware configuration of emsfp modules.
+          emsfp_firmware_get_configs:
+            module_ip: "{{ hostvars[inventory_hostname].ansible_host_ip}}"
+          delegate_to: localhost
+          tags: always
+
+        - name: Un dossier temporaire est créé pour les téléchargements
+          block:
+            - command: "mktemp -d"
+              register: mktemp_resultat
+            - set_fact:
+                dossier_temp: "{{ mktemp_resultat.stdout }}"
+          delegate_to: localhost
+          tags: always
+
+        - name: Register module type
+          emsfp_get_type_2:
+            ip_addr: "{{ hostvars[inventory_hostname].ansible_host_ip }}"
+          delegate_to: localhost
+          register: module_type
+          tags: always
+
+        - name: Clear selected firmware slot.
+          emsfp_firmware_clear_slot:
+            module_ip: "{{ hostvars[inventory_hostname].ansible_host_ip}}"
+            module_firmware_slot: "{{ firmware_slot }}"
+          delegate_to: localhost
+          tags: always
+
+        - name: Upload firmware to the selected slot.
+          emsfp_firmware_upload:
+            module_ip: "{{ hostvars[inventory_hostname].ansible_host_ip}}"
+            module_firmware_slot: "{{ firmware_slot }}"
+            module_firmware_filepath: "firmware/firmware.img"
+          delegate_to: localhost
+          tags: always
+
+        - name: Set the selected slot as Active.
+          emsfp_firmware_set_active:
+            module_ip: "{{ hostvars[inventory_hostname].ansible_host_ip}}"
+            module_firmware_slot: "{{ firmware_slot }}"
+          register: set_active_result
+          delegate_to: localhost
+          tags: always
+
+        - name: Waits for port 80 after 1 seconds delay and timout after 10 seconds
+          wait_for:
+            host: "{{ hostvars[inventory_hostname].ansible_host_ip }}"
+            port: 80
+            delay: 1
+            sleep: 1
+            timeout: 60
+            connect_timeout: 5
+            state: started
+          delegate_to: localhost
+          tags: always
+
+        - name: Set the selected slot as Default.
+          emsfp_firmware_set_default:
+            module_ip: "{{ hostvars[inventory_hostname].ansible_host_ip}}"
+            module_firmware_slot: "{{ firmware_slot }}"
+          register: set_default_result
+          delegate_to: localhost
+          tags: always
+
+# Reset to factory default et reconfiguration seulement si set active et set default fonctionne
+        - block:
+          - name: Get the new firmware configuration of emsfp modules.
+            emsfp_firmware_get_configs:
+              module_ip: "{{ hostvars[inventory_hostname].ansible_host_ip}}"
+            delegate_to: localhost
+            tags: always
+
+          - name: Reset the module configuration to application level.
+            emsfp_reset_configs:
+              ip_addr: "{{ hostvars[inventory_hostname].ansible_host_ip }}"
+              reboot: yes
+              config_reset: application
+            delegate_to: localhost
+            when: not ansible_check_mode
+            ignore_errors: yes
+            tags: always
+
+          - name: Waits for port 80 after 1 seconds delay and timout after 10 seconds
+            wait_for:
+              host: "{{ hostvars[inventory_hostname].ansible_host_ip }}"
+              port: 80
+              delay: 1
+              sleep: 1
+              timeout: 60
+              connect_timeout: 5
+              state: started
+            delegate_to: localhost
+            tags: always
+
+          - name: Pause for module to become active
+            pause:
+              seconds: 2
+
+          - name: Upload module configurations.
+            import_tasks: snippets/snippet-config-upload.yml
+            tags: always
+          when:
+            - set_default_result is succeeded
+            - set_active_result is succeeded
+
+        - name: Le dossier temporaire est effacé
+          file:
+            path: "{{ dossier_temp }}"
+            state: absent
+          delegate_to: localhost
+          tags: always
+        
+      when: "'reachable_hosts' in group_names"

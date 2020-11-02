@@ -8,8 +8,30 @@
 ---
 - name: Pousser la configuration
   emsfp_ipconfig:
-    ip_addr: "{{ ipconfig.ip_addr }}"
-    hostname: "{{ ipconfig.hostname }}"
-    dhcp_enable: "{{ ipconfig.dhcp_enable }}"
-    ctl_vlan_id: "{{ ipconfig.ctl_vlan_id }}"
+    ip_addr: "{{ hostvars[inventory_hostname].ansible_host_ip }}"
+    hostname: "{{ embrionix_module.parameters.self.ipconfig.hostname }}"
+    dhcp_enable: "{{ embrionix_module.parameters.self.ipconfig.dhcp_enable }}"
+    ctl_vlan_id: "{{ embrionix_module.parameters.self.ipconfig.ctl_vlan_id }}"
+  delegate_to: localhost
+
+- name: Waits for port 80 after reboot
+  wait_for:
+    host: "{{ ipconfig.ip_addr }}"
+    port: 80
+    delay: 1
+    timeout: "{{ cv_embrionix_wait_for_timout }}"
+    state: started
+  loop: "{{ modules }}"
+  delegate_to: localhost
+
+- name: Wait for api readiness
+  uri:
+    url: "http://{{ ipconfig.ip_addr }}/emsfp/node/v1/"
+    follow_redirects: none
+    method: GET
+  register: _result
+  until: _result.status == 200
+  retries: "{{ cv_embrionix_uri_retries }}"
+  delay: 1
+  loop: "{{ modules }}"
   delegate_to: localhost

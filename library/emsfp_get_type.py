@@ -53,9 +53,6 @@ def main():
         supports_check_mode=True,
     )
 
-    # url = f"http://{IPv4Address(module.params['ip_addr'])}"
-
-    # em = EMSFP(url)
     module_type = get_module_type(module.params['ip_addr'])
     module.exit_json(changed=False, msg=f"Module type: {module_type}", type=module_type)
 

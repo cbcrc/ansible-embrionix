@@ -16,6 +16,9 @@
     - ansible_python_interpreter: /usr/bin/env python
 
   tasks:
+    - set_fact:
+        workflow_type: csv
+
     - name: Conversion CSV vers YML.
       template:
         src: "templates/csv_to_yaml.j2"
@@ -33,15 +36,12 @@
       check_mode: no
       changed_when: no
 
+    - name: create reachable_hosts group.
+      include_tasks: snippets/snippet-csv-list-reachable-hosts.yml
+
     - name: loop over modules
       include_tasks: embox-csv-sdi-block.yml
       loop: "{{modules}}"
       loop_control:
         loop_var: module_item
 
-    # - name: Le paramètre sdi/operating_bit_rate est configuré
-    #   embox_sdi:
-    #     ip_addr: "{{ item.ip_addr_red }}"
-    #     operating_bit_rate: "{{ item.BIT_rate }}"
-    #   loop: "{{ modules }}"
-    #   delegate_to: localhost

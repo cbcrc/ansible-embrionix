@@ -1,0 +1,36 @@
+# Playbook list-reachable-hosts-csv.yml
+#
+# This playbook test if a host is reachable and add them to a reachable_hosts group if they are. The hosts are provided
+# by a csv.
+#
+# Require csv column:
+# ip_addr or ip_addr_red
+# 
+# 
+#
+# Copyright: (c) 2018, Société Radio-Canada>
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+#
+# reachable_hosts cannot be built from inventory, since the host ip is passed on from the
+# loaded csv.
+#
+---
+- set_fact:
+    reachable_hosts: []
+
+- set_fact:
+    unreachable_hosts: []
+
+- name: loop over modules
+  include_tasks: snippets/snippet-csv-list-reachable-hosts-block.yml
+  loop: "{{modules}}"
+  loop_control:
+    loop_var: module_item
+  when: modules is defined
+
+- name: loop over modules
+  include_tasks: snippets/snippet-csv-list-reachable-hosts-block.yml
+  loop: "{{modules_flows_config}}"
+  loop_control:
+    loop_var: module_item
+  when: modules_flows_config is defined

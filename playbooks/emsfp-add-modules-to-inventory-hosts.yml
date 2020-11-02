@@ -14,12 +14,15 @@
 - hosts: localhost
   gather_facts: no
   vars_files:
-    - ../all/all.yml
+    - common_vars/all/all.yml
   vars:
     - var_file: "csv/config-file.csv"
     - ansible_python_interpreter: "/usr/bin/env python"
 
   tasks:
+    - set_fact:
+        workflow_type: csv
+
     - name: Conversion CSV vers YML.
       template:
         src: "templates/csv_to_yaml.j2"

@@ -8,6 +8,7 @@
   emsfp_get_type:
     ip_addr: "{{module_item['ip_addr']}}"
   register: embox_type
+  when: module_item['ip_addr'] in reachable_hosts
 
 - name: Send configuration to embox6
   emsfp_dec_sdi_audio_output:
@@ -31,6 +32,7 @@
     ch15: "{{ module_item.sdi_ch15 }}"
   when: 
     - embox_type.type == "Embox6"
+    - module_item['ip_addr'] in reachable_hosts
 
 - name: Send configuration to embox3
   emsfp_dec_sdi_audio_output:
@@ -55,3 +57,4 @@
   when:
     - embox_type.type == "Embox3"
     - module_item.sdi_channel_id == "b1d2da17-360a-4396-80a9-f620c4bb3885"
+    - module_item['ip_addr'] in reachable_hosts

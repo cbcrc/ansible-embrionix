@@ -1,0 +1,80 @@
+# Playbook emsfp-frame-sync.yml
+#
+# This playbook configures framesync parameters from inventory values.
+#
+# Copyright: (c) 2018, Société Radio-Canada>
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+#
+---
+- hosts: emsfp
+  gather_facts: no
+  vars_files:
+    - common_vars/all/all.yml
+  vars:
+    - ansible_python_interpreter: "/usr/bin/env python"
+
+  tasks:
+    - set_fact:
+        workflow_type: inventory
+
+    - name: Get module type
+      emsfp_get_type_2:
+        ip_addr: "{{ hostvars[inventory_hostname].ansible_host_ip }}"
+      register: module_info
+      delegate_to: localhost
+      tags: always
+
+    - debug:
+        msg: "Le type: {{ module_info.type }}"
+      delegate_to: localhost
+      tags: always
+
+    - name: Configure encap frame_sync
+      emsfp_line_offset:
+        ip_addr: "{{ hostvars[inventory_hostname].ansible_host_ip }}"
+        module_type: "{{ module_info.type }}"
+        sdi_channel_id: "{{ item.key }}"
+        frame_sync: "{{ framesync_option | int }}"
+      loop: "{{ embrionix_module.parameters.sdi_input | default({}) | dict2items }}"
+      when:
+        - embrionix_module.parameters is defined
+        # - module_info.type in ["st2110_10G_enc"]
+      delegate_to: localhost
+      tags: always
+
+    - name: Configure decap frame_sync
+      emsfp_line_offset:
+        ip_addr: "{{ hostvars[inventory_hostname].ansible_host_ip }}"
+        module_type: "{{ module_info.type }}"
+        sdi_channel_id: "{{ item.key }}"
+        frame_sync: "{{ framesync_option | int }}"
+      loop: "{{ embrionix_module.parameters.sdi_output | default({}) | dict2items }}"
+      when:
+        - embrionix_module.parameters is defined
+        # - module_info.type in ["st2110_10G_dec"]
+      delegate_to: localhost
+      tags: always
+
+    - name: Configure encap frame_sync
+      emsfp_line_offset:
+        ip_addr: "{{ hostvars[inventory_hostname].ansible_host_ip }}"
+        module_type: "{{ module_info.type }}"
+        sdi_channel_id: "{{ item.key }}"
+        frame_sync: "{{ framesync_option | int }}"
+      loop: "{{ emsfp_module.parameter.sdi_input | default({}) | dict2items }}"
+      when: 
+        - emsfp_module.parameter is defined
+      delegate_to: localhost
+      tags: always
+
+    - name: Configure decap frame_sync
+      emsfp_line_offset:
+        ip_addr: "{{ hostvars[inventory_hostname].ansible_host_ip }}"
+        module_type: "{{ module_info.type }}"
+        sdi_channel_id: "{{ item.key }}"
+        frame_sync: "{{ framesync_option | int }}"
+      loop: "{{ emsfp_module.parameter.sdi_output | default({}) | dict2items }}"
+      when: 
+        - emsfp_module.parameter is defined
+      delegate_to: localhost
+      tags: always

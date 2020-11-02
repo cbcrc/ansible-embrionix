@@ -13,5 +13,8 @@
     - ansible_python_interpreter: /usr/bin/env python
 
   tasks:
+    - set_fact:
+        workflow_type: inventory
+
     - name: loop over modules
       include_tasks: embox-sdi-audio-mapping-block.yml

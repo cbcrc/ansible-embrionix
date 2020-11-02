@@ -1,0 +1,3 @@
+---
+cv_embrionix_wait_for_timout: 50
+cv_embrionix_uri_retries: 60

@@ -61,9 +61,9 @@ def main():
         argument_spec=dict(
             ip_addr=dict(type='str', required=True),
             reference_clock_id=dict(type='str', required=True),
-            domain_num=dict(type='int'),
-            vlan_id=dict(type='int'),
-            dscp=dict(type='int'),
+            domain_num=dict(type='str'),
+            vlan_id=dict(type='str'),
+            dscp=dict(type='str')
             ),
             supports_check_mode=True, 
         )
@@ -80,7 +80,6 @@ def main():
 
     url = f"http://{IPv4Address(module.params['ip_addr'])}/emsfp/node/v1/refclk/{module.params['reference_clock_id']}/"
 
-    # em = EMSFP(url, module.params, PAYLOAD_TEMPLATE)
     em = EMSFP(url, payload_params, PAYLOAD_TEMPLATE)
     module_inital_config = em.target_config
 

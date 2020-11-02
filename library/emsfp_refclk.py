@@ -57,8 +57,8 @@ def main():
     module = AnsibleModule(
         argument_spec=dict(
             ip_addr=dict(type='str', required=True),
-            mode=dict(type='int', choice=[0, 1, 2], required=True),
-            manual_ctrl=dict(type='bool'),
+            mode=dict(type='str', choice=["0", "1", "2"], required=True),
+            manual_ctrl=dict(type='str', required=False)
             ),
             supports_check_mode=True, 
         )

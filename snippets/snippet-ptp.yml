@@ -27,7 +27,7 @@
 - name: Pousser la configuration pour refclk_id
   emsfp_refclk_id:
     ip_addr: "{{ hostvars[inventory_hostname].ansible_host_ip }}"
-    reference_clock_id: "{{ item.key }}"
+    reference_clock_id: "f2807dac-985d-11e5-8994-feff819cdc9f"
     domain_num: "{{ item.value.domain_num }}"
     vlan_id: "{{ item.value.vlan_id }}"
     dscp: "{{ item.value.dscp }}"
@@ -39,7 +39,7 @@
 - name: Pousser la configuration pour refclk_id
   emsfp_refclk_id:
     ip_addr: "{{ hostvars[inventory_hostname].ansible_host_ip }}"
-    reference_clock_id: "{{ item.key }}"
+    reference_clock_id: "f3807dac-985d-11e5-8994-feff819cdc9f"
     domain_num: "{{ item.value.domain_num }}"
     vlan_id: "{{ item.value.vlan_id }}"
     dscp: "{{ item.value.dscp }}"

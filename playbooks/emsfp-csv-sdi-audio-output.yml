@@ -15,7 +15,10 @@
   vars:
     var_file: "csv/config-file.csv"
 
-  tasks: 
+  tasks:
+    - set_fact:
+        workflow_type: csv
+
     - name: Conversion CSV vers YML.
       template:
         src: "templates/csv_to_yaml_sdi_audio_mapping.j2"
@@ -34,6 +37,9 @@
 
     # - debug:
     #     msg: "{{ modules_ipconfig_payload }}"
+
+    - name: create reachable_hosts group.
+      include_tasks: snippets/snippet-csv-list-reachable-hosts.yml
 
     - name: Pousser la configuration
       emsfp_dec_sdi_audio_output:
@@ -56,3 +62,4 @@
         ch14: "{{ item.sdi_ch14 }}"
         ch15: "{{ item.sdi_ch15 }}"
       loop: "{{ modules }}"
+      when: item.ip_addr in reachable_hosts

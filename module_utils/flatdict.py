@@ -21,17 +21,20 @@ class FlatDictKeyError(FlatDictException):
 
 class FlatDict(MutableMapping):
     """
-    FlatDict Take a multi-level dictionnary and flatten it to one level
+    FlatDict Take a multi-level dictionnary and flatten it to one level.
 
     Args:
         MutableMapping ([type]): [description]
     """
     def __init__(self, *args, **kwargs):
         self.flat_dict = dict()
-        if isinstance(args[0], dict):
-            self.update(self.__flatten_dict(dict(*args, **kwargs)))
-        elif isinstance(args[0], FlatDict):
-            self.update(dict(*args, **kwargs))
+        if args:
+            if isinstance(args[0], dict):
+                if args[0] != {}:
+                    self.update(self.__flatten_dict(dict(*args, **kwargs)))
+            elif isinstance(args[0], FlatDict):
+                if args[0] != {}:
+                    self.update(dict(*args, **kwargs))
 
     def __cmp__(self, flat_dict_):
         return self.flat_dict.__cmp__(self.flat_dict, flat_dict_)
@@ -75,9 +78,9 @@ class FlatDict(MutableMapping):
     def keys(self):
         return self.flat_dict.keys()     
 
-    def get_unflattened_dict(self):
+    def unflatten(self):
         """
-        get_unflattened_dict returns an unflattened version of the flattened dictionary. The resulting dictionary should
+        unflatten returns an unflattened version of the flattened dictionary. The resulting dictionary should
         be identical to the original dictionary.
 
         Returns:
@@ -130,6 +133,8 @@ class FlatDict(MutableMapping):
             string = string + f"\'{key}\': {fd[key]}, "
             if new_line:
                 string = string + "\n"
+        if string.endswith(', '):
+            string = string[:-2]
         return string + "}"
 
 
@@ -176,7 +181,7 @@ class FlatDict(MutableMapping):
         return target_dict
 
     #TODO enlever le fix dans le check pour une clef non présente
-    def diff(self, reference_dict, add_missing_key=False):
+    def diff(self, reference_dict: dict, add_missing_key: bool = False) -> dict:
         """
         diff returns a dict containing the elements whose the value differs from the reference dictionary.
 
@@ -325,7 +330,7 @@ def main():
     pprint(flat_payload.include_dict(d2))
     # pprint(flat_payload)
     # print("\n")
-    # unflat_payload = flat_payload.get_unflattened_dict()
+    # unflat_payload = flat_payload.unflatten()
     # pprint(unflat_payload)
 
 if __name__ == "__main__":

@@ -1,0 +1,44 @@
+# Playbook list-reachable-hosts-reporting.yml
+#
+# This playbook test if a host is reachable and add them to a reachable_hosts group if they are and adds reporting. 
+#
+# Copyright: (c) 2018, Société Radio-Canada>
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+#
+---
+  - name: identify reachable hosts
+    hosts: all
+    gather_facts: no
+    become: no
+    vars:
+      ansible_connection: local
+    tasks:
+      - import_tasks: snippets/snippet-list-reachable-hosts.yml
+
+  - name: report reachable and unreachable
+    hosts: localhost
+    gather_facts: no
+    become: no
+    vars:
+      ansible_connection: local
+
+    tasks:
+      - name: Report Connectivity
+        connectivity_reporting:
+          reachable: "{{groups['reachable_hosts']}}"
+          all_hosts: "{{groups['all']}}"
+          report_type: "{{inventory}}"
+          start_time: "{{date}}"
+          use_api: "no"
+        delegate_to: localhost
+        register: connectivity
+        when: "'reachable_hosts' in groups"
+      - name: Report Connectivity none reachable
+        connectivity_reporting:
+          reachable: ""
+          all_hosts: "{{groups['all']}}"
+          report_type: "{{inventory}}"
+          start_time: "{{date}}"
+        delegate_to: localhost
+        register: connectivity
+        when: "'reachable_hosts' not in groups"

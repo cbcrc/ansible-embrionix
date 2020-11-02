@@ -8,13 +8,18 @@
 ---
 - hosts: all
   gather_facts: no
+  vars_files:
+      - common_vars/all/all.yml
   vars:
     - ansible_python_interpreter: "{{ lookup('env','VIRTUAL_ENV') }}/bin/python"
 
   tasks:
+    - set_fact:
+        workflow_type: inventory
+
     - name: create reachable_hosts group.
       import_tasks: snippets/snippet-list-reachable-hosts.yml
 
-    - name: Configure flows
+    - name: Configure ipconfig
       import_tasks: snippets/snippet-ipconfig.yml
       when: "'reachable_hosts' in group_names"

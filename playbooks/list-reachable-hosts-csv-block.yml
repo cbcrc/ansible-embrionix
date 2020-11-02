@@ -6,11 +6,13 @@
 ---
     - set_fact:
         module_ip: "{{ module_item['ip_addr'] }}"
-      when: module_item['ip_addr'] is defined
+      when:
+        - "'ip_addr' in module_item"
 
     - set_fact:
         module_ip: "{{ module_item['ip_addr_red'] }}"
-      when: module_item['ip_addr_red'] is defined
+      when:
+        - "'ip_addr_red' in module_item"
       
     - name: identify reachable hosts
       block:
@@ -23,10 +25,8 @@
             reachable_hosts: "{{ reachable_hosts + [module_ip]}}"
           when:
             - result.rc == 0
-            - module_item['ip_addr'] not in reachable_hosts
 
       rescue:
         - name: add unreached hosts to unreachable_hosts list
           set_fact:
             unreachable_hosts: "{{ unreachable_hosts + [module_ip]}}"
-          when: module_item['ip_addr'] not in unreachable_hosts

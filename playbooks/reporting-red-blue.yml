@@ -1,0 +1,25 @@
+# Playbook reporting-red-blue.yml
+#
+# This playbook test if a host is reachable and add them to a reachable_hosts group if they are and adds reporting. 
+#
+# Copyright: (c) 2018, Société Radio-Canada>
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+#
+---
+  - name: report connectivity red and blue
+    hosts: all
+    gather_facts: no
+    become: no
+    vars:
+      ansible_connection: local
+
+    tasks:
+      - name: Get Red and Blue
+        emsfp_red_blue_connectivity:
+          ip_addr: "{{ hostvars[inventory_hostname].ansible_host_ip}}"
+          hostname: "{{inventory_hostname}}"
+          report_type: "{{inventory}}"
+          start_time: "{{date}}"
+        delegate_to: localhost
+        when: "'emsfp' in group_names"
+        register: red_blue

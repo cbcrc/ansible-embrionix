@@ -31,49 +31,66 @@
     var_file: "csv/config-file.csv"
 
   tasks:
-  - name: Parse CSV to YML.
-    template:
-      src: "templates/csv_to_yaml_flows.j2"
-      dest: "vars/values_from_csv_flows_payload.yml"
-    vars: 
-      - csvfile: "{{ lookup('file', '{{ var_file }}') }}"
-      - ansible_python_interpreter: /usr/bin/python
-    run_once: true
-    check_mode: no
-    changed_when: no
+    - name: var_flows_config_file is defined
+      fail:
+        msg: "var_flows_config_file must be passed on as extra vars or be declared in the inventory."
+      when: var_flows_config_file is undefined
 
-  - name: Get Modules configuration from the generated YML file.
-    include_vars: values_from_csv_flows_payload.yml
+    - set_fact:
+        workflow_type: csv
 
-  - name: Send Put request via emsfp_put_flows
-    emsfp_flows:
-      ip_addr: "{{ modules[item|int]['ip_addr'] | default(None) }}"
-      Target: "{{ modules[item|int]['Target'] | default(None) }}"
-      FlowType: "{{ modules[item|int]['FlowType'] | default(None) }}"
-      Flow: "{{ modules[item|int]['Flow'] | default(None) }}"
-      aud_chan_cnt: "{{ modules[item|int]['aud_chan_cnt'] | default(None) }}"
-      aud_chan_map: "{{ modules[item|int]['aud_chan_map'] | default(None) }}"
-      anc_flow_profile: "{{ modules[item|int]['anc_flow_profile'] | default(None) }}"
-      aud_ptime_idx: "{{ modules[item|int]['aud_ptime_idx'] | default(None) }}"
-      dscp: "{{ modules[item|int]['dscp'] | default(None) }}"
-      dst_ip_addr: "{{ modules[item|int]['dst_ip_addr'] | default(None) }}"
-      dst_udp_port: "{{ modules[item|int]['dst_udp_port'] | default(None) }}"
-      enable: "{{ modules[item|int]['enable'] | default(None) }}"
-      igmp_src_ip: "{{ modules[item|int]['igmp_src_ip'] | default(None) }}"
-      label: "{{ modules[item|int]['label'] | default(None) }}"
-      name: "{{ modules[item|int]['name'] | default(None) }}"
-      pkt_filter_dst_ip: "{{ modules[item|int]['pkt_filter_dst_ip'] | default(None) }}"
-      pkt_filter_dst_udp: "{{ modules[item|int]['pkt_filter_dst_udp'] | default(None) }}"
-      pkt_filter_dst_mac: "{{ modules[item|int]['pkt_filter_dst_mac'] | default(None) }}"
-      pkt_filter_src_ip: "{{ modules[item|int]['pkt_filter_src_ip'] | default(None) }}"
-      pkt_filter_src_udp: "{{ modules[item|int]['pkt_filter_src_udp'] | default(None) }}"
-      pkt_filter_src_mac: "{{ modules[item|int]['pkt_filter_src_mac'] | default(None) }}"
-      pkt_filter_ssrc: "{{ modules[item|int]['pkt_filter_ssrc'] | default(None) }}"
-      pkt_filter_vlan: "{{ modules[item|int]['pkt_filter_vlan'] | default(None) }}"
-      rtp_pt: "{{ modules[item|int]['rtp_pt'] | default(None) }}"
-      sender_type: "{{ modules[item|int]['sender_type'] | default(None) }}"
-      src_ip_addr: "{{ modules[item|int]['src_ip_addr'] | default(None) }}"
-      src_udp_port: "{{ modules[item|int]['src_udp_port'] | default(None) }}"
-      # ssrc: "{{ modules[item|int]['ssrc'] | default(None) }}" #read only value
-      vlan_tag: "{{ modules[item|int]['vlan_tag'] | default(None) }}"
-    loop: "{{ range(0, modules | length)|list }}"
+    - name: Parse CSV to YML.
+      template:
+        src: "templates/csv_to_yaml_flows.j2"
+        dest: "vars/values_from_csv_flows_payload.yml"
+      vars: 
+        - csvfile: "{{ lookup('file', '{{ var_file }}') }}"
+        - ansible_python_interpreter: /usr/bin/python
+      run_once: true
+      check_mode: no
+      changed_when: no
+
+    - name: Get Modules configuration from the generated YML file.
+      include_vars: values_from_csv_flows_payload.yml
+
+    - name: create reachable_hosts group.
+      include_tasks: snippets/snippet-csv-list-reachable-hosts.yml
+
+    - name: Send Put request via emsfp_put_flows
+      emsfp_flows:
+        ip_addr: "{{ modules[item|int]['ip_addr'] | default(None) }}"
+        Target: "{{ modules[item|int]['Target'] | default(None) }}"
+        FlowType: "{{ modules[item|int]['FlowType'] | default(None) }}"
+        Flow: "{{ modules[item|int]['Flow'] | default(None) }}"
+        aud_chan_cnt: "{{ modules[item|int]['aud_chan_cnt'] | default(None) }}"
+        aud_chan_map: "{{ modules[item|int]['aud_chan_map'] | default(None) }}"
+        anc_flow_profile: "{{ modules[item|int]['anc_flow_profile'] | default(None) }}"
+        aud_ptime_idx: "{{ modules[item|int]['aud_ptime_idx'] | default(None) }}"
+        dscp: "{{ modules[item|int]['dscp'] | default(None) }}"
+        dst_ip_addr: "{{ modules[item|int]['dst_ip_addr'] | default(None) }}"
+        dst_udp_port: "{{ modules[item|int]['dst_udp_port'] | default(None) }}"
+        enable: "{{ modules[item|int]['enable'] | default(None) }}"
+        igmp_src_ip: "{{ modules[item|int]['igmp_src_ip'] | default(None) }}"
+        label: "{{ modules[item|int]['label'] | default(None) }}"
+        name: "{{ modules[item|int]['name'] | default(None) }}"
+        pkt_filter_dst_ip: "{{ modules[item|int]['pkt_filter_dst_ip'] | default(None) }}"
+        pkt_filter_dst_udp: "{{ modules[item|int]['pkt_filter_dst_udp'] | default(None) }}"
+        pkt_filter_dst_mac: "{{ modules[item|int]['pkt_filter_dst_mac'] | default(None) }}"
+        pkt_filter_src_ip: "{{ modules[item|int]['pkt_filter_src_ip'] | default(None) }}"
+        pkt_filter_src_udp: "{{ modules[item|int]['pkt_filter_src_udp'] | default(None) }}"
+        pkt_filter_src_mac: "{{ modules[item|int]['pkt_filter_src_mac'] | default(None) }}"
+        pkt_filter_ssrc: "{{ modules[item|int]['pkt_filter_ssrc'] | default(None) }}"
+        pkt_filter_vlan: "{{ modules[item|int]['pkt_filter_vlan'] | default(None) }}"
+        rtp_pt: "{{ modules[item|int]['rtp_pt'] | default(None) }}"
+        sender_type: "{{ modules[item|int]['sender_type'] | default(None) }}"
+        src_ip_addr: "{{ modules[item|int]['src_ip_addr'] | default(None) }}"
+        src_udp_port: "{{ modules[item|int]['src_udp_port'] | default(None) }}"
+        vlan_tag: "{{ modules[item|int]['vlan_tag'] | default(None) }}"
+      loop: "{{ range(0, modules | length)|list }}"
+      when: "modules[item|int]['ip_addr'] in reachable_hosts"
+
+    - debug:
+        var: reachable_hosts
+
+    - debug:
+        var: unreachable_hosts

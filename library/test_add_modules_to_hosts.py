@@ -109,7 +109,6 @@ def main():
 
     try:
         new_inventory = update_inventory(module.params['parsed_modules_params'], module.params['inventory_hosts_path'])
-        # module.fail_json(changed=False, msg=f"Debug - Type: {new_inventory}")
         module.exit_json(changed=True, msg=f"{yaml.dump(new_inventory, default_flow_style=False)}")
     except Exception as e:
         module.fail_json(changed=False, msg=f"Exception: {e}")

@@ -9,13 +9,16 @@
 - hosts: emsfp
   gather_facts: no
   vars_files:
-    - ../all/all.yml
+    - common_vars/all/all.yml
     - common_vars/framesync_licence.yml
     - common_vars/em_firmware_location.yml
   vars:
     - ansible_python_interpreter: /usr/bin/env python
 
   tasks:
+    - set_fact:
+        workflow_type: inventory
+
     - name: create reachable_hosts group.
       import_tasks: snippets/snippet-list-reachable-hosts.yml
       tags: always
@@ -61,7 +64,7 @@
             dest: "{{ dossier_temp }}"
           register: module_temp_firmware_filepath
           delegate_to: localhost
-          run_once: yes
+          run_once: no
           tags: always
 
         - debug:

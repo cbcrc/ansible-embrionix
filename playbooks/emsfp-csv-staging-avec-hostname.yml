@@ -25,7 +25,11 @@
   gather_facts: no
   vars:
     var_file: "csv/config-file.csv"
+
   tasks:
+    - set_fact:
+        workflow_type: csv
+
     - name: Conversion CSV vers YML.
       template:
         src: "templates/csv_to_yaml_dict.j2"
@@ -42,9 +46,13 @@
       include_vars: ipconfigs_payload.yml
       changed_when: no
 
+    - name: create reachable_hosts group.
+      include_tasks: snippets/snippet-csv-list-reachable-hosts.yml
+
     - name: Pousser la configuration
       emsfp_ipconfig:
         ip_addr: "{{ item.value.ip_addr }}"
         hostname: "{{ item.value.hostname }}"
       loop: "{{ modules|dict2items }}"
       delegate_to: localhost
+      when: item.value.ip_addr in reachable_hosts

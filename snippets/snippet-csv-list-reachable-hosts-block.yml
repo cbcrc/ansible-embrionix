@@ -1,0 +1,37 @@
+# Tasks used by list-reachable-hosts-csv.yml
+#
+# Copyright: (c) 2018, Société Radio-Canada>
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+#
+---
+- set_fact:
+    module_ip: "{{ module_item['Target'] }}"
+  when: "'Target' in module_item"
+
+- set_fact:
+    module_ip: "{{ module_item['ip_addr'] }}"
+  when: "'ip_addr' in module_item"
+
+- set_fact:
+    module_ip: "{{ module_item['ip_addr_red'] }}"
+  when: "'ip_addr_red' in module_item"
+
+- name: identify reachable hosts
+  block:
+    - name: ping hosts
+      local_action: command ping -c 1 -W 1 "{{ module_ip }}"
+      register: result
+      changed_when: no
+
+    - name: add reached host to reachable_host group
+      set_fact:
+        reachable_hosts: "{{ reachable_hosts + [module_ip]}}"
+      when: result.rc == 0
+      changed_when: no
+
+  rescue:
+    - name: add unreached hosts to unreachable_hosts list
+      set_fact:
+        unreachable_hosts: "{{ unreachable_hosts + [module_ip]}}"
+  when:
+    - module_ip not in reachable_hosts and module_ip not in unreachable_hosts

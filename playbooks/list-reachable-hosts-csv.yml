@@ -21,6 +21,9 @@
     - ansible_python_interpreter: "{{ lookup('env','VIRTUAL_ENV') }}/bin/python"
 
   tasks:
+    - set_fact:
+        workflow_type: csv
+
     - name: Conversion CSV vers YML.
       template:
         src: "templates/csv_to_yaml.j2"

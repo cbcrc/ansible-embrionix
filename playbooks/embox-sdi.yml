@@ -12,6 +12,9 @@
     - ansible_python_interpreter: /usr/bin/env python
 
   tasks:
+    - set_fact:
+        workflow_type: inventory
+
     - name: Get Modules configuration from the generated YML file.
       include_vars: ipconfigs_payload.yml
       check_mode: no

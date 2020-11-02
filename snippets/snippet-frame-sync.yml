@@ -18,7 +18,7 @@
   delegate_to: localhost
   tags: always
 
-- name: Configure encap line_offset
+- name: Configure decap line_offset
   emsfp_line_offset:
     ip_addr: "{{ hostvars[inventory_hostname].ansible_host_ip }}"
     module_type: "{{ module_info.type }}"
@@ -35,12 +35,12 @@
   delegate_to: localhost
   tags: always
 
-- name: Configure decap line_offset
+- name: Configure encap line_offset
   emsfp_line_offset:
     ip_addr: "{{ hostvars[inventory_hostname].ansible_host_ip }}"
     module_type: "{{ module_info.type }}"
     sdi_channel_id: "{{ item.key }}"
-    frame_sync: "{{ item.value.line_offset.frame_sync }}"
+    frame_sync: "{{ item.value.line_offset.frame_sync | default(true) }}"
     offset_mode: "{{ item.value.line_offset.offset_mode }}"
     usec_offset: "{{ item.value.line_offset.usec_offset }}"
     v_offset: "{{ item.value.line_offset.v_offset }}"
